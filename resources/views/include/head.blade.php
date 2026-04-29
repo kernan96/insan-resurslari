@@ -7,8 +7,8 @@
     <meta content="noindex, nofollow" name="robots" />
     <meta content="" name="description" />
     <meta content="" name="keywords" />
-    <link href="{{ asset('files/img/favicon.png') }}" rel="icon" />
-    <link href="{{ asset('files/img/apple-touch-icon.png') }}" rel="apple-touch-icon" />
+    <!-- <link href="{{ asset('files/img/favicon.png') }}" rel="icon" />
+    <link href="{{ asset('files/img/apple-touch-icon.png') }}" rel="apple-touch-icon" /> -->
     <link href="https://fonts.gstatic.com/" rel="preconnect" />
     <link href="{{ asset('files/css/css.css') }}" rel="stylesheet" />
     <link href="{{ asset('files/css/bootstrap.min.css') }}" rel="stylesheet" />
