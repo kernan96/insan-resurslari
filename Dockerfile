@@ -1,30 +1,27 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# Sistem paketləri
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip \
+    libpng-dev libonig-dev libxml2-dev zip unzip git curl \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
 
-# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Work directory
-WORKDIR /var/www
+WORKDIR /var/www/html
 
-# Proyekt faylları
 COPY . .
 
-# Composer install
 RUN composer install --no-dev --optimize-autoloader
 
-# Permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage
 
-# Cache optimize (optional)
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
+# Apache rewrite enable (Laravel üçün vacib)
+RUN a2enmod rewrite
 
-EXPOSE 9000
+# Apache config fix
+RUN sed -i 's/80/10000/g' /etc/apache2/ports.conf
+RUN sed -i 's/:80/:10000/g' /etc/apache2/sites-enabled/000-default.conf
 
-CMD ["php-fpm"]
+EXPOSE 10000
+
+CMD ["apache2-foreground"]
