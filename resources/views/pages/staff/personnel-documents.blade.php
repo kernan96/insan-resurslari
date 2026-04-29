@@ -233,10 +233,9 @@
                                             {!! file_get_contents(public_path('files/css/data/2.svg')) !!}
                                         </div>
                                     </a>
-                                    <a href="#"
+                                    <a href="{{ route('user.export.word.forma.3', $user->id) }}"
                                         class="btn btn-sm btn-outline-primary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#forma3Modal{{ $user->id }}">
+                                        target="_blank">
                                         <div>
                                             {!! file_get_contents(public_path('files/css/data/3.svg')) !!}
                                         </div>
@@ -1253,11 +1252,6 @@
                             </form>
                         </div>
                         <div class="row g-3">
-                            <!-- 
-                                        {{$document_type->name}}
-                                        {{$document_type->input_name}}
-                                        {{$document_type->icon_class}}
-                                        {{$document_type->description}} -->
                             @foreach($documentTypes1 as $document_type)
                             <div class="col-md-4">
                                 <div class="card h-100 shadow-sm">
@@ -1830,10 +1824,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="viewdocumentsTableBody">
-                                        <!-- $document_type->input_name
-                                        $document_type->name
-                                        $document_type->icon_class
-                                        $document_type->description -->
+
                                         @foreach($documentTypes0 as $document_type)
                                         <tr data-doc-type="{{$document_type->input_name}}"">
                                             <td class=" fw-semibold" id="view_title_{{$document_type->input_name}}">{{$document_type->name}}</td>
@@ -1846,11 +1837,6 @@
                             </div>
                         </div>
                         <div class="row g-3">
-                            <!-- 
-                                        {{$document_type->name}}
-                                        {{$document_type->input_name}}
-                                        {{$document_type->icon_class}}
-                                        {{$document_type->description}} -->
                             @foreach($documentTypes1 as $document_type)
                             <div class="col-md-4">
                                 <div class="card h-100 shadow-sm">

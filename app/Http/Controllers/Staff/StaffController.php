@@ -353,7 +353,15 @@ class StaffController extends Controller
         $fileName = 'forma 3_' . $fullName . '.docx';
         $tempFile = storage_path($fileName);
         $template->saveAs($tempFile);
-        return response()->file($tempFile);
+        $fileName = 'forma3_' . time() . '.docx';
+        $relativePath = 'forms/' . $fileName;
+
+        Storage::disk('public')->put($relativePath, file_get_contents($tempFile));
+
+        $url = asset('storage/' . $relativePath);
+        return redirect()->away(
+    'https://docs.google.com/gview?url=' . urlencode($url) . '&embedded=true'
+);
     }
     public function exportWordForma2($id)
     {
