@@ -1,0 +1,242 @@
+public function exportWordForma3($id)
+    {
+        function fmtDate($date)
+        {
+            return $date ? \Carbon\Carbon::parse($date)->format('d.m.Y') : '';
+        }
+        $template = new TemplateProcessor(storage_path('app/templates/forma_3_temp.docx'));
+        $user = User::with([
+            'orgPosition.organizationDepartment',
+        ])->findOrFail($id);
+        // 🔹 FULL NAME
+        $fullName = $user->first_name . ' ' . $user->last_name . ' ' . $user->father_name;
+        $fullName .= ($user->gender == 0 || $user->gender === false) ? ' oğlu' : ' qızı';
+        $template->setValue('full_name', $fullName);
+        // 🔹 DEPARTMENT
+        $topDepartment = app(OrgDepartmentController::class)
+            ->findTopOrganizationDepartment(optional($user->orgPosition)->id);
+        $department = optional($topDepartment)->name;
+        $template->setValue('department', $department);
+        // 🔹 DEPARTMENT date
+        $userEmployment = UserEmployment::where('user_id', $user->id)
+            ->where('organization_id', optional($topDepartment)->id)
+            ->orderBy('start_date', 'asc')
+            ->first();
+        $startDateDepartment = $userEmployment ? $userEmployment->start_date : '';
+        $template->setValue('start_date_department', fmtDate($startDateDepartment));
+        // 🔹 BIRTH + ADDRESS
+        $birthDate = $user->birth_date ? fmtDate($user->birth_date) : '';
+        $birthAddress = $user->birth_place;
+        $template->setValue(
+            'birth_address',
+            $birthDate . ', ' . $birthAddress
+        );
+        // 🔹 ŞƏKİL (Table 1)
+        $path = storage_path('app/public/' . $user->profile_photo_path);
+        if ($user->profile_photo_path) {
+            $template->setImageValue('photo', [
+                'path' => $path,
+                'width' => '3cm',
+                'height' => '4cm',
+            ]);
+        }
+
+        $template->setValue("field3", "//back'i yazılmayıb");
+        $template->setValue("field5", "//back'i yazılmayıb");
+        $template->setValue("field6", "//back'i yazılmayıb");
+        $template->setValue("field7", "//back'i yazılmayıb");
+        $template->setValue("field8", "//back'i yazılmayıb");
+        $template->setValue("field9", "//back'i yazılmayıb");
+        $template->setValue("field10", "//back'i yazılmayıb");
+        // 🔥 USER EMPLOYMENTS (dynamic table)
+
+        // 1. Yeni employment-lar
+        $userEmployments = UserEmployment::with(['position', 'organization'])
+            ->where('user_id', $user->id)
+            ->get()
+            ->map(function ($emp) {
+                return [
+                    'start_date' => $emp->start_date,
+                    'end_date' => $emp->end_date,
+                    'position' => optional($emp->position)->name,
+                    'organization' => optional($emp->organization)->name,
+                ];
+            });
+
+        // 2. Köhnə employment-lar
+        $oldEmployments = OldUserEmployment::where('user_id', $user->id)
+            ->get()
+            ->map(function ($emp) {
+                return [
+                    'start_date' => $emp->start_date,
+                    'end_date' => $emp->end_date,
+                    'position' => $emp->position,
+                    'organization' => $emp->organization,
+                ];
+            });
+
+        // 3. Merge + sort (start_date üzrə artan)
+        $allEmployments = $userEmployments
+            ->merge($oldEmployments)
+            ->sortBy('start_date')
+            ->values(); // indexləri reset edir
+
+        // 4. Table clone
+        $template->cloneRow('row_no', count($allEmployments));
+
+        // 5. Fill
+        foreach ($allEmployments as $index => $emp) {
+            $i = $index + 1;
+
+            $template->setValue("row_no#$i", $i);
+            $template->setValue(
+                "work_period#$i",
+                fmtDate($emp['start_date']) . ' - ' . fmtDate($emp['end_date'])
+            );
+            $template->setValue("position#$i", $emp['position']);
+            $template->setValue("fieldX#$i", $emp['organization']);
+        }
+        // 🔹 FILE SAVE + DOWNLOAD
+        $fileName = 'forma 3_' . $fullName . '.docx';
+        $tempFile = storage_path($fileName);
+        $template->saveAs($tempFile);
+        return response()->download($tempFile)->deleteFileAfterSend(true);
+    }
+    exportWordForma2 yazaq
+    app/templates/forma_2_temp.docx
+
+${lastName}=user->last_name
+${firstName}=user->first_name
+${fatherName}=user->father_name
+
+${birthAddress}=fmtDate(user->birth_date'), 'user->birth_place
+if(user->gender==true){${gender}='Qadın'}else{${gender}='Kişi'}
+${citizen}=user->citizen
+${extraInfo}=user->note
+${id}=user->serial_no
+${fin}=user->fin
+${sin}=user->sin
+${registeredAddress}=user->registered_address
+${residentialAddress}=user->residential_address
+
+${email}=user->email
+${maritalStatus}=user->marital_status
+user->profile_photo_path>>width=4sm>>${profilePhotoPath}
+$allEmployments>>loop{${workStart}	${workEnd}	${workPlace}	${position}}
+
+
+
+class Military extends Model
+{
+    use HasFactory;
+     protected $fillable = [
+        'user_id',
+        'military_type_id',
+        'rank',
+        'position',
+        'service_date'
+    ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function militaryType()
+    {
+        return $this->belongsTo(MilitaryType::class);
+    }
+    public function getServiceDateAttribute($value)
+{
+    return $value ? Carbon::parse($value)->format('Y-m-d') : null;
+}
+}
+$militaries=Military(where(user_id,user->id))
+${militaries}=loop{$militaries->rank" və "fmtDate($militaries->service_date)}.join", "
+
+class CriminalRecord extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'user_id',
+        'reason',
+        'date',
+    ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function getDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+}
+$crimes=CriminalRecord(where(user_id,user->id))
+
+${crimes}=loop{fmtDate($crimes->date)", "$crimes->reason}.join"\n"
+
+class NameChange extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'user_id',
+        'old_first_name',
+        'old_last_name',
+        'old_father_name',
+        'reason',
+        'date',
+    ];
+    // Bu modelin bir istifadəçi ilə əlaqəsi var
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+$namechange=NameChange(where(user_id,user->id))
+oldname=""
+
+${oldNameChange}=$namechange
+${workphonenumber} ${mobilphonenumber}
+class UserRelative extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'user_id',
+        'relationship_type_id',
+        'full_name',
+        'birth_date',
+        'birth_place',
+        'workplace',
+        'position',
+        'registered_address',
+    ];
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
+    // 🔗 User
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    // 🔗 Relationship Type
+    public function relationshipType()
+    {
+        return $this->belongsTo(RelationshipType::class);
+    }
+    
+
+    public function getBirthDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+}
+
+UserRelative >>loop{${kinship}	${kinshipFullName}	${kinshipbirth}	${kinshipwork}	${kinshipaddress}}
+
+current/today date day>>${cdday}
+current/today date month>>${cdmonth}
+current/today date year last two digit like "26">>${cdyear}
+
+
+
+
+
+

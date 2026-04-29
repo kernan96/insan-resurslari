@@ -1,0 +1,97 @@
+// ========== EDIT MODAL (kadrModalEdit) ÜÇÜN ==========
+                                const editFileInput = document.getElementById('hiddenFileInputEdit');
+                                if (editFileInput) {
+                                    let editCurrentDocType = null;
+                                    document.querySelectorAll('.add-file-btn').forEach(btn => {
+                                        btn.addEventListener('click', function(e) {
+                                            e.stopPropagation();
+                                            editCurrentDocType = this.getAttribute('data-doc-type');
+                                            editFileInput.value = '';
+                                            editFileInput.click();
+                                        });
+                                    });
+                                    editFileInput.addEventListener('change', function(e) {
+                                        if (!editCurrentDocType) return;
+                                        const files = Array.from(e.target.files);
+                                        const container = document.querySelector(`#kadrModalEdit #edit_files_${editCurrentDocType}`);
+                                        if (!container) return;
+                                        files.forEach(file => {
+                                            const existingFiles = container.querySelectorAll('.file-item');
+                                            let isDuplicate = false;
+                                            existingFiles.forEach(existing => {
+                                                const link = existing.querySelector('a');
+                                                if (link && link.textContent === file.name) {
+                                                    isDuplicate = true;
+                                                }
+                                            });
+                                            if (isDuplicate) {
+                                                Swal.fire({
+                                                    title: "Xəbərdarlıq!",
+                                                    text: `"${file.name}" artıq mövcuddur!`,
+                                                    icon: "warning",
+                                                    timer: 1500,
+                                                    showConfirmButton: false
+                                                });
+                                                return;
+                                            }
+                                            const newFileDiv = document.createElement('div');
+                                            newFileDiv.className = 'file-item d-inline-flex align-items-center border rounded px-2 py-1 bg-light';
+                                            newFileDiv.innerHTML = `
+                                                    <a href="#" class="text-decoration-none me-2"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>
+                                                    ${escapeHtml(file.name)}</a>
+                                                    <span class="text-danger fw-bold flex-shrink-0 remove-file-btn-edit" 
+                                                    style="cursor:pointer;">×</span>
+                                                `;
+                                            container.appendChild(newFileDiv);
+                                        });
+                                        Swal.fire({
+                                            title: "Əlavə edildi!",
+                                            text: `${files.length} fayl uğurla əlavə olundu.`,
+                                            icon: "success",
+                                            timer: 1300,
+                                            showConfirmButton: false
+                                        });
+                                        editCurrentDocType = null;
+                                        editFileInput.value = '';
+                                    });
+                                }
+route '/kadr-ucotu/kadr-senedleri/sened-yukle/user/{id}'
+movcud yaratma funksiyasi:
+public function personnelDocumentStore(StoreDocumentRequest $request)
+    {
+        $documentTypes = DocumentType::all();
+        $results = [];
+        foreach ($documentTypes as $docType) {
+            $files = $request->file($docType->input_name);
+            if (!$files) continue;
+            // əgər single-dirsə array-ə çevir
+            if (!$docType->is_multiple) {
+                $files = [$files];
+            }
+            if ($files) {
+                foreach ($files as $file) {
+                    if (!$file) continue;
+                    // Fayl adını unikal etmək
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs("uploads/{$request->user_id}", $filename);
+                    // DB-yə yaz
+                    Document::create([
+                        'user_id' => $request->user_id,
+                        'document_type_id' => $docType->id,
+                        'title' => $filename,
+                        'file_path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                        'is_active' => 1,
+                    ]);
+                    $results[] = [
+                        // 'input_name' => $docType->input_name,
+                        // 'message' => $file->getClientOriginalName() . ' yükləndi',
+                        'status' => 'success'
+                    ];
+                }
+            }
+        }
+mene yukleme route ve controller yaz scripti ona gore deyis bazaya yuklensin
+--nezere al file icinde bir nece fayl da ola biler(deyise biler controller hazir olsun)
