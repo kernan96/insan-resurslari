@@ -42,8 +42,8 @@ Route::prefix('struktur')->group(function () {
         
         // 🔥 əvvəl static route-lar
         Route::get('/get-relationship-types', [FormInfo::class, 'getRelationshipTypes'])->name('structure.employee.get.relationship.types');
-        Route::get('/get-military-types', [FormInfo::class, 'getMilitaryTypes'])->name('structure.employee.get.relationship.types');
-        Route::get('/get-phone-types', [FormInfo::class, 'getPhoneTypes'])->name('structure.employee.get.relationship.types');
+        Route::get('/get-military-types', [FormInfo::class, 'getMilitaryTypes'])->name('structure.employee.get.military.types');
+        Route::get('/get-phone-types', [FormInfo::class, 'getPhoneTypes'])->name('structure.employee.get.phone.types');
         Route::get('/{id}', [OrgDepartmentController::class, 'employee'])->name('structure.employee');
         // İşçi əməliyyatları
         Route::post('/emekdas', [OrgDepartmentController::class, 'employee_store'])->name('structure.employee.store');
