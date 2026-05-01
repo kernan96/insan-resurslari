@@ -55,9 +55,10 @@ class StaffController extends Controller
         $departmentIds = $allDepartments->pluck('id');
         $users = User::with(['activeEmployment'])
             ->whereHas('orgPosition.organizationDepartment', function ($q) use ($departmentIds) {
-                $q->whereIn('id', $departmentIds);
+                $q->whereIn('id', $departmentIds)
+                    ->where('is_active', true);
             })
-            ->whereHas('activeEmployment') // yalnız aktiv employment olanlar
+            ->whereHas('activeEmployment')
             ->get();
         $documentTypes0 = DocumentType::where('is_multiple', 0)->get();
         $documentTypes1 = DocumentType::where('is_multiple', 1)->get();
@@ -353,6 +354,7 @@ class StaffController extends Controller
         $fileName = 'forma 3_' . $fullName . '.docx';
         $tempFile = storage_path($fileName);
         $template->saveAs($tempFile);
+        return response()->download($tempFile)->deleteFileAfterSend(true);
         $fileName = 'forma3_' . time() . '.docx';
         $relativePath = 'forms/' . $fileName;
 
@@ -360,8 +362,8 @@ class StaffController extends Controller
 
         $url = asset('storage/' . $relativePath);
         return redirect()->away(
-    'https://docs.google.com/gview?url=' . urlencode($url) . '&embedded=true'
-);
+            'https://docs.google.com/gview?url=' . urlencode($url) . '&embedded=true'
+        );
     }
     public function exportWordForma2($id)
     {
@@ -399,7 +401,10 @@ class StaffController extends Controller
         $template->setValue('registeredAddress', $user->registered_address);
         $template->setValue('residentialAddress', $user->residential_address);
         $template->setValue('email', $user->email);
-        $template->setValue('maritalStatus', $user->marital_status);
+        $template->setValue(
+            'maritalStatus',
+            ($user->marital_status) ? 'Evli' : 'Subay'
+        );
 
         // 🔹 FOTO
         if ($user->profile_photo_path) {
@@ -477,8 +482,9 @@ class StaffController extends Controller
         $nameChanges = NameChange::where('user_id', $user->id)->get();
 
         $oldNames = $nameChanges->map(function ($n) {
-            return $n->old_first_name . ' ' . $n->old_last_name . ' ' . $n->old_father_name;
-        })->implode(', ');
+            return $n->old_first_name . ' ' . $n->old_last_name . ' ' . $n->old_father_name
+                . "\n" . fmtDate($n->date) . ', ' . $n->reason;
+        })->implode("\n");
 
         $template->setValue('oldNameChange', $oldNames);
 
@@ -487,23 +493,61 @@ class StaffController extends Controller
             ->where('user_id', $user->id)
             ->get();
 
-        $template->cloneRow('kinship', count($relatives));
+        $count = max(1, $relatives->count()); // minimum 1 sətir
 
-        foreach ($relatives as $i => $r) {
-            $index = $i + 1;
+        $template->cloneRow('kinship', $count);
 
-            $template->setValue("kinship#$index", optional($r->relationshipType)->name);
-            $template->setValue("kinshipFullName#$index", $r->full_name);
-            $template->setValue("kinshipbirth#$index", fmtDate($r->birth_date));
-            $template->setValue("kinshipwork#$index", $r->workplace . ' ' . $r->position);
-            $template->setValue("kinshipaddress#$index", $r->registered_address);
+        if ($relatives->isEmpty()) {
+            // boş sətir
+            $template->setValue("kinship#1", '');
+            $template->setValue("kinshipFullName#1", '');
+            $template->setValue("kinshipbirth#1", '');
+            $template->setValue("kinshipwork#1", '');
+            $template->setValue("kinshipaddress#1", '');
+        } else {
+            foreach ($relatives as $i => $r) {
+                $index = $i + 1;
+
+                $template->setValue("kinship#$index", optional($r->relationshipType)->name);
+                $template->setValue("kinshipFullName#$index", $r->full_name);
+                $template->setValue("kinshipbirth#$index", fmtDate($r->birth_date));
+                $template->setValue("kinshipwork#$index", $r->workplace . ', ' . $r->position);
+                $template->setValue("kinshipaddress#$index", $r->registered_address);
+            }
         }
+        // 🔹 PHONES
+        $workPhone = Phone::where('user_id', $user->id)
+            ->where('phone_type_id', 3)
+            ->value('number');
+
+        $mobilePhone = Phone::where('user_id', $user->id)
+            ->where('phone_type_id', 1)
+            ->value('number');
+
+        // Template-ə göndər
+        $template->setValue('workphonenumber', $workPhone);
+        $template->setValue('mobilphonenumber', $mobilePhone);
 
         // 🔹 CURRENT DATE
         $now = now();
 
         $template->setValue('cdday', $now->format('d'));
-        $template->setValue('cdmonth', $now->format('m'));
+        $months = [
+            1 => 'yanvar',
+            2 => 'fevral',
+            3 => 'mart',
+            4 => 'aprel',
+            5 => 'may',
+            6 => 'iyun',
+            7 => 'iyul',
+            8 => 'avqust',
+            9 => 'sentyabr',
+            10 => 'oktyabr',
+            11 => 'noyabr',
+            12 => 'dekabr',
+        ];
+
+        $template->setValue('cdmonth', $months[$now->month]);
         $template->setValue('cdyear', $now->format('y'));
 
         // 🔹 SAVE

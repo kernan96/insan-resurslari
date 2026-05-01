@@ -30,6 +30,10 @@ use App\Models\Structure\OldUserEmployment;
 use App\Models\Structure\UserRelative;
 use Illuminate\Support\Facades\Schema;
 
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\TemplateProcessor;
+
 class OrgDepartmentController extends Controller
 {
     public function index(Request $request)
@@ -617,7 +621,7 @@ class OrgDepartmentController extends Controller
 
         $data = $request->all();
 
-        
+
         $userId = $data['user_id'] ?? null;
         if (!$userId) {
             return response()->json([
@@ -742,5 +746,100 @@ class OrgDepartmentController extends Controller
         }
 
         return null;
+    }
+
+
+    public function staffTable($id)
+    {
+        $org = OrganizationDepartment::findOrFail($id);
+
+        if (!in_array($org->organization_type_id, [1, 2])) {
+            return;
+        }
+        $root = OrganizationDepartment::with([
+            'childrenRecursive',
+            'orgPositions.users',
+            'orgPositions.position'
+        ])->findOrFail($id);
+
+
+        $result = [];
+
+
+        // 🔹 recursive filter + collect
+        function collectTree($node, &$result, $skip = false)
+        {
+            // root heç vaxt skip olunmur
+            if (!$node->is_active) {
+                return;
+            }
+            $result[] = $node;
+
+            if (
+                !$node->childrenRecursive ||
+                $node->childrenRecursive->isEmpty()
+            ) {
+                return;
+            }
+
+            foreach ($node->childrenRecursive as $child) {
+
+                // 🔴 yalnız child-lar üçün qərar ver
+                $childSkip = $skip;
+
+                if (
+                    $child->parent_id !== null &&
+                    in_array($child->organization_type_id, [1, 2])
+                ) {
+                    $childSkip = true; // bu node + altı skip
+                }
+
+                if ($childSkip || !$child->is_active) {
+                    continue;
+                }
+
+                collectTree($child, $result, false);
+            }
+        }
+
+        collectTree($root, $result);
+
+
+
+        $templatePath = storage_path('app/templates/staff_table_temp.docx');
+
+        $template = new TemplateProcessor($templatePath);
+
+        $rows = [];
+        foreach ($result as $org) {
+            foreach ($org->orgPositions as $orgPos) {
+                foreach ($orgPos->users as $user) {
+
+                    if (!$user->activeEmployment) {
+                        continue;
+                    }
+
+                    $rows[] = [
+                        'position' => $orgPos->position->name ?? '-',
+                        'full_name' =>
+                        $user->last_name . ' ' .
+                            $user->first_name . ' ' .
+                            $user->father_name
+                    ];
+                }
+            }
+        }
+
+        $template->cloneRowAndSetValues('position', $rows);
+
+        $id = $id ?? 'unknown';
+        $now = now()->format('d-m-Y-H-i');
+
+        $fileName = "staff_table_{$id}_{$now}.docx";
+        $path = storage_path("app/{$fileName}");
+
+        $template->saveAs($path);
+
+        return response()->download($path)->deleteFileAfterSend(true);
     }
 }

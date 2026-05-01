@@ -2586,13 +2586,13 @@
                         <div id="editDebug"
                             style="background:#000;color:#0f0;padding:10px;font-size:12px;margin-bottom:10px;display:none">
                         </div>
-                        <div class="col-2">
+                        <div class="col-6">
                             <div
-                                class="d-flex flex-wrap align-items-start justify-content-md-end mt-2 mt-md-0 gap-2 mb-3">
-                                <a class="create_new btn btn-light add-custom" data-bs-target="#newOrgModal"
-                                    data-bs-toggle="modal" href="#" id="contactModal" data-id="">
-                                    <i class="uil uil-plus me-1"></i> Yenisini yarat
-                                </a>
+                                class="d-flex flex-nowrap align-items-start justify-content-md-end mt-2 mt-md-0 gap-2 mb-3">
+                                
+                                <a class="create_new btn btn-primary add-custom" data-bs-target="#newOrgModal"
+                                    data-bs-toggle="modal" href="javascript:void(0)" id="contactModal" data-id="">
+                                    <i class="uil uil-plus me-1"></i>Yenisini yarat</a>
                             </div>
                             <!--Yenisini yarat modal-->
                             <div aria-hidden="true" aria-labelledby="newOrgModalLabel" class="modal fade"
@@ -2758,7 +2758,7 @@
             </div>
         </section>
 </main>
-<a class="back-to-top d-flex align-items-center justify-content-center" href="#"><i
+<a class="back-to-top d-flex align-items-center justify-content-center" href="javascript:void(0)"><i
         class="bi bi-arrow-up-short"></i></a>
 @endsection
 @section('js')
@@ -2992,7 +2992,7 @@
                                         data-bs-target="#newOrgModal"
                                         data-bs-toggle="modal"
                                         data-id="${id}"
-                                        href="#"
+                                        href="javascript:void(0)"
                                         title="Əlavə et">
                                             <i class="fas fa-plus"></i>
                                         </a>
@@ -3013,7 +3013,7 @@
                                         data-email="${email}"
                                         data-fax="${fax}"
                                         data-phone="${phone}"
-                                        href="#"
+                                        href="javascript:void(0)"
                                         title="Redaktə et">
                                             <i class="fas fa-edit"></i>
                                         </a>

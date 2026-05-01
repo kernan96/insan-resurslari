@@ -204,7 +204,7 @@
                                 <!-- Action buttons -->
                                 <td class="action-btns">
                                     <button class="btn btn-sm btn-outline-primary me-1"
-                                        data-bs-toggle="modal"
+                                        data-bs-toggle="tooltip"
                                         data-user-id="{{ $user->id }}"
                                         data-bs-target="#kadrModalEdit"
                                         data-bs-title="Redaktə et">
@@ -212,30 +212,24 @@
                                     </button>
                                     <button class="btn btn-sm btn-outline-primary me-1"
                                         data-user-id="{{ $user->id }}"
-                                        data-bs-toggle="modal"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-title="Bax"
                                         data-bs-target="#kadrModalView">
                                         <i class="bi bi-eye-fill"></i>
                                     </button>
-                                    <a href="#"
-                                        data-user-id="{{ $user->id }}"
-                                        class="btn btn-sm btn-outline-success"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-title="Endir"
-                                        download>
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                                   
                                     <a href="{{ route('user.export.word.forma.2', $user->id) }}"
                                         class="btn btn-sm btn-outline-primary"
                                         data-bs-toggle="tooltip"
-                                        data-user-id="{{ $user->id }}"
                                         data-bs-title="Forma 2">
                                         <div>
                                             {!! file_get_contents(public_path('files/css/data/2.svg')) !!}
                                         </div>
                                     </a>
                                     <a href="{{ route('user.export.word.forma.3', $user->id) }}"
+                                        data-bs-toggle="tooltip"
                                         class="btn btn-sm btn-outline-primary"
-                                        target="_blank">
+                                        data-bs-title="Forma 3">
                                         <div>
                                             {!! file_get_contents(public_path('files/css/data/3.svg')) !!}
                                         </div>
@@ -243,6 +237,7 @@
                                 </td>
                             </tr>
                             @endforeach
+                            
                         </tbody>
                     </table>
                 </div>

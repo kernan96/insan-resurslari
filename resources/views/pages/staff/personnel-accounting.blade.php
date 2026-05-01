@@ -55,6 +55,7 @@
                     <h4>Kadr sənədləri</h4>
                 </div>
             </div>
+            {{--
             <div class="col-10 col-sm-6 col-md-3">
                 <div class="card-box" onclick="window.location='{{ route('graduation-schedule') }}'">
                     <h4>Məzuniyyətlər</h4>
@@ -65,21 +66,24 @@
                     <h4>İcazələr</h4>
                 </div>
             </div>
-            <!-- <div class="col-10 col-sm-6 col-md-3">
+            <div class="col-10 col-sm-6 col-md-3">
                 <div class="card-box" onclick="window.location='{{ route('evaluation') }}'">
                     <h4>Qiymətləndirmə</h4>
                 </div>
             </div>
+            --}}
             <div class="col-10 col-sm-6 col-md-3">
                 <div class="card-box" onclick="window.location='{{ route('education') }}'">
                     <h4>Təhsil və peşəkar inkişaf</h4>
                 </div>
             </div>
+            {{--
             <div class="col-10 col-sm-6 col-md-3">
                 <div class="card-box" onclick="window.location='{{ route('training') }}'">
                     <h4>Təlim</h4>
                 </div>
-            </div> -->
+            </div>
+            --}}
         </div>
     </section>
 </main>

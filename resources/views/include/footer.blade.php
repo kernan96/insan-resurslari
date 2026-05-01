@@ -18,11 +18,11 @@
 <script src="{{ asset('files/js/validate.js') }}"></script>
 <script src="{{ asset('files/js/quill.js') }}"></script>
 <script src="{{ asset('files/js/main.js') }}"></script>
-<script crossorigin="anonymous"
+<!-- <script crossorigin="anonymous"
     data-cf-beacon='{"version":"2024.11.0","token":"68c5ca450bae485a842ff76066d69420","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
     defer="defer"
     integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ=="
-    src="files/vcd15cbe7772f49c399c6a5babf22c1241717689176015"></script>
+    src="files/css/data/vcd15cbe7772f49c399c6a5babf22c1241717689176015"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>

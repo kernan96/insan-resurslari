@@ -35,6 +35,8 @@ Route::prefix('struktur')->group(function () {
     Route::post('/', [OrgDepartmentController::class, 'store'])->name('structure.store');
     Route::post('/yenile', [OrgDepartmentController::class, 'update'])->name('structure.update');
     Route::post('/deyis', [OrgDepartmentController::class, 'change'])->name('structure.change');
+    Route::get('/{id}/staff-table', [OrgDepartmentController::class, 'staffTable'])
+    ->name('structure.staff-table');
     // Struktur ətraflı (employee page)
     Route::prefix('struktur-etrafli')->group(function () {
         
