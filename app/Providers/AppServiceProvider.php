@@ -19,11 +19,12 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        Carbon::setLocale('az');
-        
-        // Bütün URL-ləri HTTPS olaraq force et
+
+
+public function boot()
+{
+    if (app()->environment('production')) {
         URL::forceScheme('https');
     }
+}
 }
