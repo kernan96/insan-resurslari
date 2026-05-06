@@ -693,7 +693,7 @@
                         // Şöbələri yüklə (Quruma bağlı Şöbələr)
                         function loadDepartments(organizationId) {
                             $.ajax({
-                                url: '/get-departments-by-organization',
+                                url: '/kadr-ucotu/kadr-senedleri/get-departments-by-organization',
                                 type: 'GET',
                                 data: {
                                     organization_id: organizationId

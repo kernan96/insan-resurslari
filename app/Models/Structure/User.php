@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models\Structure;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -6,6 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Staff\Document;
+use App\Models\Education\Education;
+use App\Models\Education\AcademicDegree;
+use App\Models\Education\UserLanguage;
+use App\Models\Education\ComputerKnowledge;
+use App\Models\Education\UserEvent;
+
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -135,7 +142,29 @@ class User extends Authenticatable
         return $this->hasMany(OldUserEmployment::class);
     }
     public function relatives()
-{
-    return $this->hasMany(UserRelative::class);
-}
+    {
+        return $this->hasMany(UserRelative::class);
+    }
+    // Bir user → çox education
+    public function educations()
+    {
+        return $this->hasMany(Education::class);
+    }
+    public function academicDegrees()
+    {
+        return $this->hasMany(AcademicDegree::class);
+    }
+    public function userLanguages()
+    {
+        return $this->hasMany(UserLanguage::class);
+    }
+    // User → çox computer knowledge
+    public function computerKnowledges()
+    {
+        return $this->hasMany(ComputerKnowledge::class);
+    }
+    public function userEvents()
+    {
+        return $this->hasMany(UserEvent::class);
+    }
 }

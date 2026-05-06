@@ -468,7 +468,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table text-center" style="font-size:0.8rem">
+                            <table class="table text-center">
                                 <thead>
                                     <tr>
                                         <th scope="col">Şəxs</th>
@@ -478,8 +478,7 @@
                                         <th scope="col">Doğum tarixi</th>
                                         <th scope="col">İşə başlama tarixi</th>
                                         <th scope="col">Bitmə tarixi</th>
-                                        <th scope="col">Partiyalılığı</txh>
-                                        <th scope="col">Orden</th>
+                                        
                                         <th scope="col">Əməliyyatlar</th>
                                     </tr>
                                 </thead>
@@ -516,10 +515,8 @@
                                         <td>{{ $emp->start_date?->format('Y-m-d') ?? '-' }}</td>
                                         {{-- İşdən çıxma --}}
                                         <td>{{ $emp->end_date?->format('Y-m-d') ?? '-' }}</td>
-                                        {{-- Partiya qısa adı --}}
-                                        <td>{{ $emp->party_short_name ?? '-' }}</td>
-                                        {{-- Orden (bool) --}}
-                                        <td>{{ $emp->ordenbool ? '+' : '-' }}</td>
+                                      
+                                      
                                         <td>
                                             <div>
                                                 <a href="javascript:void(0)"

@@ -123,7 +123,7 @@ Route::get('/qiymetlendirme-bax', function () {
     return view('pages.evaluation-view');
 })->name('evaluation-view');
 Route::get('/tehsil-pesekar-inkisaf', function () {
-    return view('pages.education');
+    return view('pages.education.education');
 })->name('education');
 Route::get('/telim', function () {
     return view('pages.training');

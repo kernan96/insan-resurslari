@@ -1,0 +1,185 @@
+<!-- EDIT Modal -->
+    <div class="modal fade" id="eduModalEdit" tabindex="-1" aria-labelledby="kadrModalEditLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="kadrModalEditLabel">Redaktə et</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" id="kadrFormEdit">
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
+                    <button type="submit" form="kadrFormEdit" class="btn btn-primary">Dəyişiklikləri yadda
+                        saxla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="tehsilModalEdit" tabindex="-1" aria-labelledby="kadrModalEditLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="kadrModalEditLabel">Redaktə et</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
+                </div>
+                <div class="modal-body">
+                   
+                        <input type="hidden" name="user_id">
+                        
+
+                        
+                        <div class="card mb-4 mt-2" data-card-type="education">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Təhsil və ixtisas</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="education">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="education">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Təhsil müəssisəsinin adı, fakültə</th>
+                                                <th class="text-center align-middle" {{--style="width: 10%;"--}}>Daxil olduğu tarix</th>
+                                                <th class="text-center align-middle" {{--style="width: 10%;"--}}>Bitirdiyi tarix</th>
+                                                <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənəd üzrə ixtisasınız və peşəniz</th>
+                                                <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənədin nömrəsi, verildiyi tarix</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Sənəd</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-education"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-4 mt-2" data-card-type="course">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Kurslar</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="course">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="course">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Kursun adı</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-course"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-4 mt-2" data-card-type="training">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Təlimlər</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="training">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="training">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Təlimin adı</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-training"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-4 mt-2" data-card-type="academic-degree">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Elmi dərəcə, elmi ad</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="academic-degree">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="academic-degree">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Elmi dərəcə, elmi ad</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Verildiyi tarix</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Hansı qurum tərəfindən verilmişdir</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Diplomun, attestatın nömrəsi, verildiyi tarix</th>
+                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-academic-degree"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-4 mt-2" data-card-type="computer-khnowledge">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="computer-khnowledge">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="computer-khnowledge">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-computer-khnowledge"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-4 mt-2" data-card-type="language">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Dil bilikləri</span>
+                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="language">+ Əlavə
+                                    et</button>
+                            </div>
+                            <div class="card-body" data-entries="language">
+                                <div class="table-responsive">
+                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center align-middle" >Dillər</th>
+                                                <th class="text-center align-middle" >Bilmə dərəcəsi</th>
+                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-language"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                   
+                       
+                  
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    buna back'siz front js yaz
+    elave et vuranda eduModalEdit'de uygun table saheleri inputlar acilsin
+    doldurulandan sonra yadda saxlaya vuranda uygun table yazsin
+
+    emeliyyatlar sahesinde edit ve delete olsun
+    edite vuranda eduModalEdit acilsin movcud melumatlar yazilsin yadda saxlayanda uygun setir guncellensin
+    delete vuranda uygun setir silinsin

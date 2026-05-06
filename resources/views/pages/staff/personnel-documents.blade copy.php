@@ -481,7 +481,7 @@
                             function loadDepartments(organizationId) {
                                 console.log('Şöbələr yüklənir...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-departments-by-organization',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-departments-by-organization',
                                     type: 'GET',
                                     data: {
                                         organization_id: organizationId
