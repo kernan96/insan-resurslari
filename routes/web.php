@@ -36,10 +36,10 @@ Route::prefix('struktur')->group(function () {
     Route::post('/yenile', [OrgDepartmentController::class, 'update'])->name('structure.update');
     Route::post('/deyis', [OrgDepartmentController::class, 'change'])->name('structure.change');
     Route::get('/{id}/staff-table', [OrgDepartmentController::class, 'staffTable'])
-    ->name('structure.staff-table');
+        ->name('structure.staff-table');
     // Struktur ətraflı (employee page)
     Route::prefix('struktur-etrafli')->group(function () {
-        
+
         // 🔥 əvvəl static route-lar
         Route::get('/get-relationship-types', [FormInfo::class, 'getRelationshipTypes'])->name('structure.employee.get.relationship.types');
         Route::get('/get-military-types', [FormInfo::class, 'getMilitaryTypes'])->name('structure.employee.get.military.types');
@@ -66,32 +66,47 @@ Route::prefix('struktur')->group(function () {
             ->name('structure.get.user.data');
     });
 });
-Route::get('/kadr-ucotu', function () {
-    return view('pages.staff.personnel-accounting');
-})->name('pages.staff.personal-accounting');
-Route::get('/kadr-ucotu/kadr-senedleri', [StaffController::class, 'personnelDocuments'])->name('personal.document');
-Route::post('/kadr-ucotu/kadr-senedleri/sened-elave-et', [StaffController::class, 'personnelDocumentStore'])->name('personal.document.store');
-Route::post('/kadr-ucotu/kadr-senedleri/validate-document', function (Request $request) {
-    $req = new \App\Http\Requests\StoreDocumentRequest();
-    return $req->validateJson($request->all());
-})->name('validate.document');
-// web.php
-Route::get('/kadr-ucotu/kadr-senedleri/user/{id}', [StaffController::class, 'getUserDocData'])->name('user.data');
-Route::delete('/kadr-ucotu/kadr-senedleri/sened-sil/{id}', [StaffController::class, 'destroyDocument'])->name('destroy.document');
-Route::delete('/kadr-ucotu/kadr-senedleri/sened-yukle/user/{id}', [StaffController::class, 'destroyDocument'])->name('destroy.document');
-Route::get('/kadr-ucotu/kadr-senedleri/forma-3/user/{id}', [StaffController::class, 'exportWordForma3'])->name('user.export.word.forma.3');;
-Route::get('/kadr-ucotu/kadr-senedleri/forma-2/user/{id}', [StaffController::class, 'exportWordForma2'])->name('user.export.word.forma.2');;
-// AJAX route-ları
-Route::get('/get-departments-by-organization', [StaffController::class, 'getDepartmentsByOrganization'])->name('get-departments-by-organization');
-Route::get('/get-sectors-by-organization', [StaffController::class, 'getSectorsByOrganization'])->name('get-sectors-by-organization'); // YENİ
-Route::get('/get-sectors-by-department', [StaffController::class, 'getSectorsByDepartment'])->name('get-sectors-by-department');
-Route::get('/get-users-by-organization', [StaffController::class, 'getUsersByOrganization'])->name('get-users-by-organization');
-Route::get('/get-users-by-department', [StaffController::class, 'getUsersByDepartment'])->name('get-users-by-department');
-Route::get('/get-users-by-sector', [StaffController::class, 'getUsersBySector'])->name('get-users-by-sector');
-Route::get('/get-position-by-user', [StaffController::class, 'getPositionByUser'])->name('get-position-by-user');
-Route::get('/kadr-ucotu/kadr-senedleri-etrafli', function () {
-    return view('pages.staff.personnel-documents-details');
-})->name('pages.staff.personnel-documents-details');
+Route::prefix('kadr-ucotu')->group(function () {
+
+    // Əsas səhifə
+    Route::get('/', function () {
+        return view('pages.staff.personnel-accounting');
+    })->name('pages.staff.personal-accounting');
+
+    Route::prefix('kadr-senedleri')->group(function () {
+
+        // Əsas
+        Route::get('/', [StaffController::class, 'personnelDocuments'])->name('personal.document');
+        Route::post('/sened-elave-et', [StaffController::class, 'personnelDocumentStore'])->name('personal.document.store');
+
+        // Validate
+        Route::post('/validate-document', function (Request $request) {
+            $req = new \App\Http\Requests\StoreDocumentRequest();
+            return $req->validateJson($request->all());
+        })->name('validate.document');
+
+        // User
+        Route::get('/user/{id}', [StaffController::class, 'getUserDocData'])->name('user.data');
+
+        // Delete
+        Route::delete('/sened-sil/{id}', [StaffController::class, 'destroyDocument'])->name('destroy.document');
+        Route::delete('/sened-yukle/user/{id}', [StaffController::class, 'destroyDocument'])->name('destroy.document.upload');
+
+        // Export
+        Route::get('/forma-3/user/{id}', [StaffController::class, 'exportWordForma3'])->name('user.export.word.forma.3');
+        Route::get('/forma-2/user/{id}', [StaffController::class, 'exportWordForma2'])->name('user.export.word.forma.2');
+
+        // AJAX
+        Route::get('/get-departments-by-organization', [StaffController::class, 'getDepartmentsByOrganization'])->name('get-departments-by-organization');
+        Route::get('/get-sectors-by-organization', [StaffController::class, 'getSectorsByOrganization'])->name('get-sectors-by-organization');
+        Route::get('/get-sectors-by-department', [StaffController::class, 'getSectorsByDepartment'])->name('get-sectors-by-department');
+        Route::get('/get-users-by-organization', [StaffController::class, 'getUsersByOrganization'])->name('get-users-by-organization');
+        Route::get('/get-users-by-department', [StaffController::class, 'getUsersByDepartment'])->name('get-users-by-department');
+        Route::get('/get-users-by-sector', [StaffController::class, 'getUsersBySector'])->name('get-users-by-sector');
+        Route::get('/get-position-by-user', [StaffController::class, 'getPositionByUser'])->name('get-position-by-user');
+    });
+});
+
 Route::get('/kadr-ucotu/kadr-senedleri-etrafli/sertifikatlar', function () {
     return view('pages.certificates');
 })->name('certificates');

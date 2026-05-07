@@ -1,10 +1,3 @@
-/**
-* Template Name: RİNN
-* Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-* Updated: Apr 7 2025 with Bootstrap v5.3.5
-* Author: BootstrapMade.com
-* License: https://bootstrapmade.com/license/
-*/
 (function() {
   "use strict";
   /**

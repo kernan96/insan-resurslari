@@ -724,7 +724,7 @@
                         // Quruma bağlı birbaşa Sektorları yüklə
                         function loadSectorsByOrganization(organizationId) {
                             $.ajax({
-                                url: '/get-sectors-by-organization',
+                                url: '/kadr-ucotu/kadr-senedleri/get-sectors-by-organization',
                                 type: 'GET',
                                 data: {
                                     organization_id: organizationId
@@ -755,7 +755,7 @@
                         // Şöbəyə bağlı Sektorları yüklə
                         function loadSectorsByDepartment(departmentId, organizationId) {
                             $.ajax({
-                                url: '/get-sectors-by-department',
+                                url: '/kadr-ucotu/kadr-senedleri/get-sectors-by-department',
                                 type: 'GET',
                                 data: {
                                     department_id: departmentId
@@ -789,7 +789,7 @@
                         // Quruma bağlı əməkdaşları yüklə
                         function loadUsersByOrganization(organizationId) {
                             $.ajax({
-                                url: '/get-users-by-organization',
+                                url: '/kadr-ucotu/kadr-senedleri/get-users-by-organization',
                                 type: 'GET',
                                 data: {
                                     organization_id: organizationId
@@ -809,7 +809,7 @@
                         // Şöbəyə bağlı əməkdaşları yüklə
                         function loadUsersByDepartment(departmentId) {
                             $.ajax({
-                                url: '/get-users-by-department',
+                                url: '/kadr-ucotu/kadr-senedleri/get-users-by-department',
                                 type: 'GET',
                                 data: {
                                     department_id: departmentId
@@ -829,7 +829,7 @@
                         // Sektora bağlı əməkdaşları yüklə
                         function loadUsersBySector(sectorId) {
                             $.ajax({
-                                url: '/get-users-by-sector',
+                                url: '/kadr-ucotu/kadr-senedleri/get-users-by-sector',
                                 type: 'GET',
                                 data: {
                                     sector_id: sectorId
@@ -869,7 +869,7 @@
                         // İstifadəçinin vəzifəsini yüklə
                         function loadPositionByUser(userId) {
                             $.ajax({
-                                url: '/get-position-by-user',
+                                url: '/kadr-ucotu/kadr-senedleri/get-position-by-user',
                                 type: 'GET',
                                 data: {
                                     user_id: userId

@@ -506,7 +506,7 @@
                             function loadSectors(departmentId) {
                                 console.log('Sektorlar yüklənir...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-sectors-by-department',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-sectors-by-department',
                                     type: 'GET',
                                     data: {
                                         department_id: departmentId
@@ -531,7 +531,7 @@
                             function loadUsersByOrganization(organizationId) {
                                 console.log('İstifadəçilər yüklənir (qurum)...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-users-by-organization',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-users-by-organization',
                                     type: 'GET',
                                     data: {
                                         organization_id: organizationId
@@ -549,7 +549,7 @@
                             function loadUsersByDepartment(departmentId) {
                                 console.log('İstifadəçilər yüklənir (şöbə)...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-users-by-department',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-users-by-department',
                                     type: 'GET',
                                     data: {
                                         department_id: departmentId
@@ -567,7 +567,7 @@
                             function loadUsersBySector(sectorId) {
                                 console.log('İstifadəçilər yüklənir (sektor)...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-users-by-sector',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-users-by-sector',
                                     type: 'GET',
                                     data: {
                                         sector_id: sectorId
@@ -602,7 +602,7 @@
                             function loadPositionByUser(userId) {
                                 console.log('Vəzifə yüklənir...'); // Debug üçün
                                 $.ajax({
-                                    url: '/get-position-by-user',
+                                    url: '/kadr-ucotu/kadr-senedleri/get-position-by-user',
                                     type: 'GET',
                                     data: {
                                         user_id: userId
