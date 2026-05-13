@@ -14,6 +14,7 @@ class AcademicDegree extends Model
         'given_org',
         'doc_number',
         'doc_date',
+        'doc_path',
         'user_id',
         'academic_type_id'
     ];

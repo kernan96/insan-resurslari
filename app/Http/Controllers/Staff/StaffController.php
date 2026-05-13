@@ -295,14 +295,83 @@ class StaffController extends Controller
             ]);
         }
 
-        $template->setValue("field3", "//back'i yazılmayıb");
-        $template->setValue("field5", "//back'i yazılmayıb");
-        $template->setValue("field6", "//back'i yazılmayıb");
-        $template->setValue("field7", "//back'i yazılmayıb");
-        $template->setValue("field8", "//back'i yazılmayıb");
-        $template->setValue("field9", "//back'i yazılmayıb");
-        $template->setValue("field10", "//back'i yazılmayıb");
-        // 🔥 USER EMPLOYMENTS (dynamic table)
+        // 🔹 MILITARY RANKS (hərbi rütbələr)
+        $ranks = $user->militaries->pluck('rank')->filter()->implode(', ');
+
+        if ($ranks) {
+            $ranks = "{Dövlət qulluğunun ixtisas dərəcəsi}, " . $ranks;
+        } else {
+            $ranks = "{Dövlət qulluğunun ixtisas dərəcəsi}";
+        }
+        $template->setValue('ranks', $ranks ?: '');
+
+
+        // 🔹 EDUCATION LEVEL (təhsil səviyyəsi)
+        $educationTypeIds = $user->educations->pluck('education_type_id')->unique()->toArray();
+        $edu_level = '';
+        if (in_array(2, $educationTypeIds) || in_array(3, $educationTypeIds)) {
+            $edu_level = 'Ali';
+        } elseif (in_array(1, $educationTypeIds)) {
+            $edu_level = 'Orta';
+        }
+        $template->setValue('edu_level', $edu_level);
+
+        // 🔹 EDUCATION ORG AND DATE (təhsil müəssisəsi və tarixi)
+        $educations = $user->educations->load('educationType');
+        $edu_org_and_date = '';
+        $major = '';
+
+        if ($edu_level == 'Orta') {
+            // Filter: yalnız education_type_id = 1 olanlar
+            $filtered = $educations->where('education_type_id', 1);
+            $items = [];
+            foreach ($filtered as $edu) {
+                $items[] = $edu->org_name . " (Orta), " . fmtDate($edu->end_date);
+            }
+            $edu_org_and_date = implode(', ', $items);
+        } elseif ($edu_level == 'Ali') {
+            // Filter: education_type_id = 2,3,4,5 olanlar
+            $filtered = $educations->whereIn('education_type_id', [2, 3, 4, 5])
+                ->sortBy('education_type_id');
+
+            $items = [];
+            $majors = [];
+            foreach ($filtered as $edu) {
+                $typeName = optional($edu->educationType)->name ?: '';
+                $items[] = $edu->org_name . " (" . $typeName . "), " . fmtDate($edu->end_date);
+                if ($edu->major) {
+                    $majors[] = $edu->major;
+                }
+            }
+            $edu_org_and_date = implode(', ', $items);
+
+            // Remove duplicates from majors
+            $majors = array_unique($majors);
+            $major = implode(', ', $majors);
+        }
+        $template->setValue('edu_org_and_date', $edu_org_and_date);
+        $template->setValue('major', $major);
+
+        // 🔹 ACADEMIC DEGREE (elmi dərəcə)
+        $academicDegrees = $user->academicDegrees->load('academicType')
+            ->pluck('academicType.name')
+            ->filter()
+            ->implode(', ');
+        $template->setValue('academic_degree', $academicDegrees);
+
+        // 🔹 LANGUAGES (dillər)
+        $userLanguages = $user->userLanguages->load(['language', 'languageLevel']);
+        $languages = [];
+        foreach ($userLanguages as $ul) {
+            $langName = optional($ul->language)->name ?: '';
+            $levelName = optional($ul->languageLevel)->name ?: '';
+            if ($langName) {
+                $languages[] = $langName . " (" . $levelName . ")";
+            }
+        }
+        $template->setValue('language', implode(', ', $languages));
+
+
 
         // 1. Yeni employment-lar
         $userEmployments = UserEmployment::with(['position', 'organization'])
@@ -449,6 +518,117 @@ class StaffController extends Controller
 
         // 4. cloneRow
         $template->cloneRow('workStart', count($allEmployments));
+
+        // 🔹 EDUCATION (təhsil)
+        $educations = $user->educations->load('educationType');
+
+        // Təhsil setirləri üçün say
+        $eduCount = $educations->whereIn('education_type_id', [1, 2, 3])->count();
+        $exEduCount = $educations->whereIn('education_type_id', [4, 5])->count();
+
+        // Normal təhsil setirləri (1,2,3)
+        $template->cloneRow('eduOrgName', max(1, $eduCount));
+        if ($eduCount > 0) {
+            $eduIndex = 1;
+            foreach ($educations as $edu) {
+                if (in_array($edu->education_type_id, [1, 2, 3])) {
+                    $template->setValue("eduOrgName#$eduIndex", $edu->org_name . " (" . optional($edu->educationType)->name . ")");
+                    $template->setValue("eduStartDate#$eduIndex", fmtDate($edu->start_date));
+                    $template->setValue("eduEndDate#$eduIndex", fmtDate($edu->end_date));
+                    $template->setValue("eduSpecialty#$eduIndex", $edu->major);
+                    $template->setValue("eduDocNum#$eduIndex", $edu->doc_number . ($edu->doc_date ? ", " . fmtDate($edu->doc_date) : ''));
+                    $eduIndex++;
+                }
+            }
+        } else {
+            // Boş setir
+            $template->setValue("eduOrgName#1", '');
+            $template->setValue("eduStartDate#1", '');
+            $template->setValue("eduEndDate#1", '');
+            $template->setValue("eduSpecialty#1", '');
+            $template->setValue("eduDocNum#1", '');
+        }
+
+        // Əlavə təhsil setirləri (4,5)
+        $template->cloneRow('exEduOrgName', max(1, $exEduCount));
+        if ($exEduCount > 0) {
+            $exEduIndex = 1;
+            foreach ($educations as $edu) {
+                if (in_array($edu->education_type_id, [4, 5])) {
+                    $template->setValue("exEduOrgName#$exEduIndex", $edu->org_name . " (" . optional($edu->educationType)->name . ")");
+                    $template->setValue("exEduStartDate#$exEduIndex", fmtDate($edu->start_date));
+                    $template->setValue("exEduEndDate#$exEduIndex", fmtDate($edu->end_date));
+                    $template->setValue("exEduSpecialty#$exEduIndex", $edu->major);
+                    $template->setValue("exEduDocNum#$exEduIndex", $edu->doc_number . ($edu->doc_date ? ", " . fmtDate($edu->doc_date) : ''));
+                    $exEduIndex++;
+                }
+            }
+        } else {
+            // Boş setir
+            $template->setValue("exEduOrgName#1", '');
+            $template->setValue("exEduStartDate#1", '');
+            $template->setValue("exEduEndDate#1", '');
+            $template->setValue("exEduSpecialty#1", '');
+            $template->setValue("exEduDocNum#1", '');
+        }
+
+        // 🔹 ACADEMIC DEGREES (elmi dərəcələr)
+        $academicDegrees = $user->academicDegrees->load('academicType');
+        $academicCount = max(1, $academicDegrees->count());
+
+        $template->cloneRow('academicDegree', $academicCount);
+
+        if ($academicDegrees->isNotEmpty()) {
+            $degreeIndex = 1;
+            foreach ($academicDegrees as $degree) {
+                $template->setValue("academicDegree#$degreeIndex", optional($degree->academicType)->name);
+                $template->setValue("academicDegreeDate#$degreeIndex", fmtDate($degree->given_date));
+                $template->setValue("academicOrg#$degreeIndex", $degree->given_org);
+                $template->setValue("academicDoc#$degreeIndex", $degree->doc_number . ($degree->doc_date ? ", " . fmtDate($degree->doc_date) : ''));
+                $degreeIndex++;
+            }
+        } else {
+            // Boş setir
+            $template->setValue("academicDegree#1", '');
+            $template->setValue("academicDegreeDate#1", '');
+            $template->setValue("academicOrg#1", '');
+            $template->setValue("academicDoc#1", '');
+        }
+
+        // 🔹 LANGUAGES (dillər)
+        $userLanguages = $user->userLanguages->load(['language', 'languageLevel']);
+        $languageCount = max(1, $userLanguages->count());
+
+        $template->cloneRow('language', $languageCount);
+
+        if ($userLanguages->isNotEmpty()) {
+            $langIndex = 1;
+            foreach ($userLanguages as $ul) {
+                $template->setValue("language#$langIndex", optional($ul->language)->name);
+                $template->setValue("langLevel#$langIndex", optional($ul->languageLevel)->name);
+                $langIndex++;
+            }
+        } else {
+            // Boş setir
+            $template->setValue("language#1", '');
+            $template->setValue("langLevel#1", '');
+        }
+
+        // 🔹 COMPUTER SKILLS (kompüter bilikləri)
+        $computerSkills = $user->computerKnowledges->load('skill')
+            ->pluck('skill.name')
+            ->filter()
+            ->implode(', ');
+        $template->setValue('computerKnowledges', $computerSkills ?: '');
+        // 🔹 MILITARY RANKS (hərbi rütbələr)
+        $ranks = $user->militaries->pluck('rank')->filter()->implode(', ');
+
+        if ($ranks) {
+            $ranks = "{Dövlət qulluğunun ixtisas dərəcəsi}, " . $ranks;
+        } else {
+            $ranks = "{Dövlət qulluğunun ixtisas dərəcəsi}";
+        }
+        $template->setValue('professionalQualification', $ranks ?: '');
 
         // 5. Fill
         foreach ($allEmployments as $i => $emp) {

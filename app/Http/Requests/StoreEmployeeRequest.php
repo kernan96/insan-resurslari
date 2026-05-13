@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Http\Requests;
+
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+
 class StoreEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
@@ -12,12 +15,19 @@ class StoreEmployeeRequest extends FormRequest
     public function rules(): array
     {
         $userId = $this->route('id') ?? $this->input('id');
+        // Əgər fin göndərilibsə və həmin fin-ə aid user varsa, onun id-sini götür
+        if ($this->input('fin')) {
+            $existingUser = \App\Models\Structure\User::where('fin', $this->input('fin'))->first();
+            if ($existingUser) {
+                $userId = $existingUser->id;
+            }
+        }
         return [
             // Şəxsi məlumatlar
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'father_name' => 'required|string|max:255',
-            'fin' => 'required|string|size:7|unique:users,fin,' . $userId,
+            'fin' => 'required|string|size:7', // unique qaydasını çıxardırıq
             'serial_no' => 'nullable|string|max:50',
             'profile_photo_path' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'birth_date' => 'nullable|date|before:today',
@@ -34,8 +44,8 @@ class StoreEmployeeRequest extends FormRequest
             'contract_no' => 'nullable|string|max:100',
             'sin' => 'nullable|string|max:50',
             // Sistem giriş məlumatları
-            'username' => 'required|string|max:255|unique:users,username,' . $userId,
-            'email' => 'nullable|email|max:255|unique:users,email,' . $userId,
+            'username' => 'required|string|max:255|unique:users,username,' . ($userId ?? 'NULL'),
+            'email' => 'nullable|email|max:255|unique:users,email,' . ($userId ?? 'NULL'),
             'role_id' => 'required|exists:roles,id',
             'password' => 'required|string|min:8',
             // Ünvan məlumatları

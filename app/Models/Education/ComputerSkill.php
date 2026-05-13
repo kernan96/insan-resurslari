@@ -9,7 +9,8 @@ class ComputerSkill extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name'
+        'name',
+        'key_words'
     ];
 
     public function computerKnowledges()

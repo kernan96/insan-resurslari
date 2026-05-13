@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('given_org')->nullable();       // verən təşkilat
             $table->string('doc_number')->nullable();      // sənəd nömrəsi
             $table->date('doc_date')->nullable();          // sənəd tarixi
-
+            $table->string('doc_path')->nullable();
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->cascadeOnDelete();

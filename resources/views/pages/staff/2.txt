@@ -1,185 +1,751 @@
-<!-- EDIT Modal -->
-    <div class="modal fade" id="eduModalEdit" tabindex="-1" aria-labelledby="kadrModalEditLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="kadrModalEditLabel">Redaktə et</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="" id="kadrFormEdit">
-                    </form>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
-                    <button type="submit" form="kadrFormEdit" class="btn btn-primary">Dəyişiklikləri yadda
-                        saxla</button>
+
+
+Route::prefix('tehsil-pesekar-inkisaf')->group(function () {
+
+    // Əsas səhifə
+    Route::get('/', [EducationController::class, 'index'])
+    ->name('education');
+
+    Route::get('/education-types', [EducationController::class, 'getEducationTypes'])
+        ->name('education-types');
+    Route::get('/academic-types', [EducationController::class, 'getAcademicTypes'])
+        ->name('academic-types');
+    Route::get('/language-levels', [EducationController::class, 'getLanguageLevels'])
+        ->name('language-levels');
+    Route::get('/languages', [EducationController::class, 'getLanguages'])
+        ->name('languages');
+    Route::get('computer-skills', [EducationController::class, 'getSkills'])
+    ->name('computer.skills');
+    Route::prefix('/user/{userId}')->group(function () {
+        Route::get('/data', [EducationController::class, 'getUserData']);
+        Route::post('/education', [EducationController::class, 'saveEducation']);
+        Route::post('/academic-degree', [EducationController::class, 'saveAcademicDegree']);
+        Route::post('/computer-knowledge', [EducationController::class, 'saveComputerKnowledge']);
+        Route::post('/language', [EducationController::class, 'saveLanguage']);
+        Route::post('/course', [EducationController::class, 'saveCourse']);
+        Route::post('/training', [EducationController::class, 'saveTraining']);
+        
+        Route::delete('/education/{id}', [EducationController::class, 'deleteEducation']);
+        Route::delete('/academic-degree/{id}', [EducationController::class, 'deleteAcademicDegree']);
+        Route::delete('/computer-knowledge/{id}', [EducationController::class, 'deleteComputerKnowledge']);
+        Route::delete('/language/{id}', [EducationController::class, 'deleteLanguage']);
+        Route::delete('/course/{id}', [EducationController::class, 'deleteCourse']);
+        Route::delete('/training/{id}', [EducationController::class, 'deleteTraining']);
+    });
+});
+class EducationController extends Controller
+{
+    public function index()
+    {
+        // Aktiv işçiləri əldə et
+        $users = User::whereHas('activeEmployment', function($q) {
+                $q->where('status', true);
+            })
+            ->with(['orgPosition.organizationDepartment', 'activeEmployment'])
+            ->get();
+        
+        return view('pages.education.education', compact('users'));
+    }
+    public function getEducationTypes()
+    {
+        $types = EducationType::where('id', '<', 6)
+            ->select('id', 'name')
+            ->get();
+
+        return response()->json($types);
+    }
+    public function getAcademicTypes()
+    {
+        $types = AcademicType::select('id', 'name')->get();
+        return response()->json($types);
+    }
+
+    public function getLanguageLevels()
+    {
+        $levels = LanguageLevel::select('id', 'name')->get();
+        return response()->json($levels);
+    }
+    public function getLanguages()
+    {
+        $languages = Language::select('id', 'name', 'key_words', 'code')
+            ->orderBy('name')
+            ->get();
+        return response()->json($languages);
+    }
+    public function getSkills()
+    {
+        $skills = ComputerSkill::select('id', 'name', 'key_words')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        return response()->json($skills);
+    }
+    // Bütün user datalarını bir dəfəyə qaytar
+    public function getUserData($userId)
+    {
+        $user = User::with([
+            'educations.educationType',
+            'academicDegrees.academicType',
+            'userLanguages.language',
+            'userLanguages.languageLevel',
+            'computerKnowledges.skill'
+        ])->findOrFail($userId);
+        
+        return response()->json([
+            'education' => $user->educations->map(function($e) {
+                return [
+                    'id' => $e->id,
+                    'education_type_id' => $e->education_type_id,
+                    'education_type_name' => $e->educationType?->name,
+                    'institution' => $e->org_name,
+                    'start_date' => $e->start_date,
+                    'end_date' => $e->end_date,
+                    'specialty' => $e->major,
+                    'document_info' => $e->doc_number . ' ' . $e->doc_date,
+                    'document_link' => $e->doc_path
+                ];
+            }),
+            'academic-degree' => $user->academicDegrees->map(function($a) {
+                return [
+                    'id' => $a->id,
+                    'academic_type_id' => $a->academic_type_id,
+                    'academic_type_name' => $a->academicType?->name,
+                    'issue_date' => $a->given_date,
+                    'issued_by' => $a->given_org,
+                    'document_no' => $a->doc_number . ' ' . $a->doc_date
+                ];
+            }),
+            'language' => $user->userLanguages->map(function($l) {
+                return [
+                    'id' => $l->id,
+                    'language_id' => $l->language_id,
+                    'language_name' => $l->language?->name,
+                    'level_id' => $l->language_level_id,
+                    'level_name' => $l->languageLevel?->name
+                ];
+            }),
+            'computer-knowledge' => $user->computerKnowledges->map(function($c) {
+                return [
+                    'id' => $c->id,
+                    'skill_id' => $c->skill_id,
+                    'skill_name' => $c->skill?->name
+                ];
+            }),
+            'course' => [], // Course modeliniz yoxdursa
+            'training' => []  // Training modeliniz yoxdursa
+        ]);
+    }
+    
+    // Education - Əlavə et / Yenilə
+    public function saveEducation(Request $request, $userId)
+    {
+        $data = $request->validate([
+            'id' => 'nullable|exists:education,id',
+            'education_type_id' => 'required|exists:education_types,id',
+            'institution' => 'required|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'specialty' => 'nullable|string',
+            'document_info' => 'nullable|string'
+        ]);
+        
+        $education = Education::updateOrCreate(
+            ['id' => $data['id'] ?? null, 'user_id' => $userId],
+            [
+                'user_id' => $userId,
+                'education_type_id' => $data['education_type_id'],
+                'org_name' => $data['institution'],
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'],
+                'major' => $data['specialty'],
+                'doc_number' => $data['document_info'],
+                'doc_date' => null
+            ]
+        );
+        
+        return response()->json(['success' => true, 'id' => $education->id]);
+    }
+    
+    // Academic Degree
+    public function saveAcademicDegree(Request $request, $userId)
+    {
+        $data = $request->validate([
+            'id' => 'nullable|exists:academic_degrees,id',
+            'academic_type_id' => 'required|exists:academic_types,id',
+            'issue_date' => 'nullable|date',
+            'issued_by' => 'nullable|string',
+            'document_no' => 'nullable|string'
+        ]);
+        
+        $degree = AcademicDegree::updateOrCreate(
+            ['id' => $data['id'] ?? null, 'user_id' => $userId],
+            [
+                'user_id' => $userId,
+                'academic_type_id' => $data['academic_type_id'],
+                'given_date' => $data['issue_date'],
+                'given_org' => $data['issued_by'],
+                'doc_number' => $data['document_no'],
+                'doc_date' => null
+            ]
+        );
+        
+        return response()->json(['success' => true, 'id' => $degree->id]);
+    }
+    
+    // Computer Knowledge (multi-select)
+    public function saveComputerKnowledge(Request $request, $userId)
+    {
+        $data = $request->validate([
+            'skill_ids' => 'required|array',
+            'skill_ids.*' => 'exists:computer_skills,id'
+        ]);
+        
+        // Əvvəlki bacarıqları sil
+        ComputerKnowledge::where('user_id', $userId)->delete();
+        
+        // Yenilərini əlavə et
+        foreach ($data['skill_ids'] as $skillId) {
+            ComputerKnowledge::create([
+                'user_id' => $userId,
+                'skill_id' => $skillId
+            ]);
+        }
+        
+        return response()->json(['success' => true]);
+    }
+    
+    // Language
+    public function saveLanguage(Request $request, $userId)
+    {
+        $data = $request->validate([
+            'id' => 'nullable|exists:user_languages,id',
+            'language_id' => 'required|exists:languages,id',
+            'level_id' => 'required|exists:language_levels,id'
+        ]);
+        
+        $language = UserLanguage::updateOrCreate(
+            ['id' => $data['id'] ?? null, 'user_id' => $userId],
+            [
+                'user_id' => $userId,
+                'language_id' => $data['language_id'],
+                'language_level_id' => $data['level_id']
+            ]
+        );
+        
+        return response()->json(['success' => true, 'id' => $language->id]);
+    }
+    
+    // Course (əgər model varsa)
+    public function saveCourse(Request $request, $userId)
+    {
+        // Course modeliniz yoxdursa, sadəcə success qaytar
+        return response()->json(['success' => true]);
+    }
+    
+    // Training (əgər model varsa)
+    public function saveTraining(Request $request, $userId)
+    {
+        return response()->json(['success' => true]);
+    }
+    
+    // DELETE metodları
+    public function deleteEducation($userId, $id)
+    {
+        Education::where('id', $id)->where('user_id', $userId)->delete();
+        return response()->json(['success' => true]);
+    }
+    
+    public function deleteAcademicDegree($userId, $id)
+    {
+        AcademicDegree::where('id', $id)->where('user_id', $userId)->delete();
+        return response()->json(['success' => true]);
+    }
+    
+    public function deleteComputerKnowledge($userId, $id)
+    {
+        ComputerKnowledge::where('id', $id)->where('user_id', $userId)->delete();
+        return response()->json(['success' => true]);
+    }
+    
+    public function deleteLanguage($userId, $id)
+    {
+        UserLanguage::where('id', $id)->where('user_id', $userId)->delete();
+        return response()->json(['success' => true]);
+    }
+    
+    public function deleteCourse($userId, $id)
+    {
+        return response()->json(['success' => true]);
+    }
+    
+    public function deleteTraining($userId, $id)
+    {
+        return response()->json(['success' => true]);
+    }
+}
+   <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Qlobal cache-lər
+            let educationTypesCache = [];
+            let academicTypesCache = [];
+            let languageLevelsCache = [];
+            let languagesCache = [];
+            let computerSkillsCache = [];
+
+            // Hər user üçün data cache
+            let usersData = {};
+
+            // === Cache-ləri yüklə ===
+            async function loadAllCaches() {
+                try {
+                    const [educationRes, academicRes, languageLevelsRes, languagesRes, computerSkillsRes] = await Promise.all([
+                        fetch('/tehsil-pesekar-inkisaf/education-types'),
+                        fetch('/tehsil-pesekar-inkisaf/academic-types'),
+                        fetch('/tehsil-pesekar-inkisaf/language-levels'),
+                        fetch('/tehsil-pesekar-inkisaf/languages'),
+                        fetch('/tehsil-pesekar-inkisaf/computer-skills')
+                    ]);
+
+                    educationTypesCache = await educationRes.json();
+                    academicTypesCache = await academicRes.json();
+                    languageLevelsCache = await languageLevelsRes.json();
+                    languagesCache = await languagesRes.json();
+                    computerSkillsCache = await computerSkillsRes.json();
+                } catch (error) {
+                    console.error('Cache yüklənərkən xəta:', error);
+                }
+            }
+
+            // === User datalarını yüklə (ilk dəfə açılanda) ===
+            async function loadUserData(userId, container) {
+                if (usersData[userId]) {
+                    renderUserData(userId, container, usersData[userId]);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/tehsil-pesekar-inkisaf/user/${userId}/data`);
+                    const data = await response.json();
+                    usersData[userId] = data;
+                    renderUserData(userId, container, data);
+                } catch (error) {
+                    console.error('Məlumat yüklənərkən xəta:', error);
+                    container.innerHTML = '<div class="alert alert-danger">Məlumat yüklənərkən xəta baş verdi</div>';
+                }
+            }
+
+            // === User datasını HTML-ə çevir ===
+            function renderUserData(userId, container, data) {
+                const html = `
+            <ul class="nav nav-pills mb-3" id="eduTabs-${userId}" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#edu-${userId}">Təhsil və ixtisas</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#courses-${userId}">Kurslar</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#trainings-${userId}">Təlimlər</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#academic-degree-${userId}">Elmi dərəcə</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#computer-knowledge-${userId}">Kompüter bilikləri</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#language-${userId}">Dil bilikləri</button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                ${renderEducationTab(userId, data.education)}
+                ${renderCoursesTab(userId, data.course)}
+                ${renderTrainingsTab(userId, data.training)}
+                ${renderAcademicDegreeTab(userId, data['academic-degree'])}
+                ${renderComputerKnowledgeTab(userId, data['computer-knowledge'])}
+                ${renderLanguageTab(userId, data.language)}
+            </div>
+        `;
+                container.innerHTML = html;
+                container.setAttribute('data-loaded', 'true');
+
+                // Əlavə et düymələrinə event listener əlavə et
+                container.querySelectorAll('.form-add-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const cardType = btn.getAttribute('data-card');
+                        openAddModal(userId, cardType);
+                    });
+                });
+            }
+
+            // === Təhsil tabını render et ===
+            function renderEducationTab(userId, educations) {
+                let rows = '';
+                educations.forEach((edu, index) => {
+                    rows += `
+                <tr data-id="${edu.id}" data-type="education">
+                    <td>${escapeHtml(edu.education_type_name || '')}</td>
+                    <td>${escapeHtml(edu.institution || '')}</td>
+                    <td>${escapeHtml(edu.start_date || '')}</td>
+                    <td>${escapeHtml(edu.end_date || '')}</td>
+                    <td>${escapeHtml(edu.specialty || '')}</td>
+                    <td>${escapeHtml(edu.document_info || '')}</td>
+                    <td>${edu.document_link ? `<a href="${edu.document_link}" target="_blank">Bax</a>` : ''}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm edit-item" data-id="${edu.id}" data-type="education" data-index="${index}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm delete-item" data-id="${edu.id}" data-type="education"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+                });
+
+                return `
+            <div class="tab-pane fade show active" id="edu-${userId}">
+                <div class="card mb-4 mt-2">
+                    <div class="card-header bg-light d-flex justify-content-between">
+                        <span class="fw-bold">Təhsil və ixtisas</span>
+                        <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="education">+ Əlavə et</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr><th>Təhsil növü</th><th>Müəssisə</th><th>Başlama</th><th>Bitmə</th><th>İxtisas</th><th>Sənəd</th><th>Fayl</th><th style="width:80px">Əməliyyat</th></tr>
+                                </thead>
+                                <tbody id="tbody-education-${userId}">${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="modal fade" id="tehsilModalEdit" tabindex="-1" aria-labelledby="kadrModalEditLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="kadrModalEditLabel">Redaktə et</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
-                </div>
-                <div class="modal-body">
-                   
-                        <input type="hidden" name="user_id">
-                        
+        `;
+            }
 
-                        
-                        <div class="card mb-4 mt-2" data-card-type="education">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Təhsil və ixtisas</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="education">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="education">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Təhsil müəssisəsinin adı, fakültə</th>
-                                                <th class="text-center align-middle" {{--style="width: 10%;"--}}>Daxil olduğu tarix</th>
-                                                <th class="text-center align-middle" {{--style="width: 10%;"--}}>Bitirdiyi tarix</th>
-                                                <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənəd üzrə ixtisasınız və peşəniz</th>
-                                                <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənədin nömrəsi, verildiyi tarix</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Sənəd</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-education"></tbody>
-                                    </table>
-                                </div>
-                            </div>
+            // === Kompüter bilikləri tabı ===
+            function renderComputerKnowledgeTab(userId, skills) {
+                let rows = '';
+                skills.forEach((skill, index) => {
+                    rows += `
+                <tr data-id="${skill.id}" data-type="computer-knowledge">
+                    <td>${escapeHtml(skill.skill_name || '')}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm edit-item" data-id="${skill.id}" data-type="computer-knowledge" data-index="${index}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm delete-item" data-id="${skill.id}" data-type="computer-knowledge"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+                });
+
+                return `
+            <div class="tab-pane fade" id="computer-knowledge-${userId}">
+                <div class="card mb-4 mt-2">
+                    <div class="card-header bg-light d-flex justify-content-between">
+                        <span class="fw-bold">Kompüter bilikləri</span>
+                        <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="computer-knowledge">+ Əlavə et</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead><tr><th>Bacarıq</th><th style="width:80px">Əməliyyat</th></tr></thead>
+                                <tbody id="tbody-computer-knowledge-${userId}">${rows}</tbody>
+                            </table>
                         </div>
-                        <div class="card mb-4 mt-2" data-card-type="course">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Kurslar</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="course">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="course">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Kursun adı</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-course"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card mb-4 mt-2" data-card-type="training">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Təlimlər</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="training">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="training">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Təlimin adı</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-training"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card mb-4 mt-2" data-card-type="academic-degree">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Elmi dərəcə, elmi ad</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="academic-degree">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="academic-degree">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Elmi dərəcə, elmi ad</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Verildiyi tarix</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Hansı qurum tərəfindən verilmişdir</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Diplomun, attestatın nömrəsi, verildiyi tarix</th>
-                                                <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-academic-degree"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card mb-4 mt-2" data-card-type="computer-khnowledge">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="computer-khnowledge">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="computer-khnowledge">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-computer-khnowledge"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card mb-4 mt-2" data-card-type="language">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">Dil bilikləri</span>
-                                <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="language">+ Əlavə
-                                    et</button>
-                            </div>
-                            <div class="card-body" data-entries="language">
-                                <div class="table-responsive">
-                                    <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center align-middle" >Dillər</th>
-                                                <th class="text-center align-middle" >Bilmə dərəcəsi</th>
-                                                <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-language"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                   
-                       
-                  
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
-                    
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        `;
+            }
 
-    buna back'siz front js yaz
-    elave et vuranda eduModalEdit'de uygun table saheleri inputlar acilsin
-    doldurulandan sonra yadda saxlaya vuranda uygun table yazsin
+            // === Dil bilikləri tabı ===
+            function renderLanguageTab(userId, languages) {
+                let rows = '';
+                languages.forEach((lang, index) => {
+                    rows += `
+                <tr data-id="${lang.id}" data-type="language">
+                    <td>${escapeHtml(lang.language_name || '')}</td>
+                    <td>${escapeHtml(lang.level_name || '')}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm edit-item" data-id="${lang.id}" data-type="language" data-index="${index}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm delete-item" data-id="${lang.id}" data-type="language"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+                });
 
-    emeliyyatlar sahesinde edit ve delete olsun
-    edite vuranda eduModalEdit acilsin movcud melumatlar yazilsin yadda saxlayanda uygun setir guncellensin
-    delete vuranda uygun setir silinsin
+                return `
+            <div class="tab-pane fade" id="language-${userId}">
+                <div class="card mb-4 mt-2">
+                    <div class="card-header bg-light d-flex justify-content-between">
+                        <span class="fw-bold">Dil bilikləri</span>
+                        <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="language">+ Əlavə et</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead><tr><th>Dil</th><th>Səviyyə</th><th style="width:80px">Əməliyyat</th></tr></thead>
+                                <tbody id="tbody-language-${userId}">${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            // === Elmi dərəcə tabı ===
+            function renderAcademicDegreeTab(userId, degrees) {
+                let rows = '';
+                degrees.forEach((degree, index) => {
+                    rows += `
+                <tr data-id="${degree.id}" data-type="academic-degree">
+                    <td>${escapeHtml(degree.academic_type_name || '')}</td>
+                    <td>${escapeHtml(degree.issue_date || '')}</td>
+                    <td>${escapeHtml(degree.issued_by || '')}</td>
+                    <td>${escapeHtml(degree.document_no || '')}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm edit-item" data-id="${degree.id}" data-type="academic-degree" data-index="${index}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm delete-item" data-id="${degree.id}" data-type="academic-degree"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+                });
+
+                return `
+            <div class="tab-pane fade" id="academic-degree-${userId}">
+                <div class="card mb-4 mt-2">
+                    <div class="card-header bg-light d-flex justify-content-between">
+                        <span class="fw-bold">Elmi dərəcə</span>
+                        <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="academic-degree">+ Əlavə et</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead><tr><th>Dərəcə</th><th>Verilmə tarixi</th><th>Verən qurum</th><th>Sənəd</th><th style="width:80px">Əməliyyat</th></tr></thead>
+                                <tbody id="tbody-academic-degree-${userId}">${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            function renderCoursesTab(userId, courses) {
+                return `<div class="tab-pane fade" id="courses-${userId}">Kurslar</div>`;
+            }
+
+            function renderTrainingsTab(userId, trainings) {
+                return `<div class="tab-pane fade" id="trainings-${userId}">Təlimlər</div>`;
+            }
+
+            // === Modal açma ===
+            let currentUserId = null;
+            let currentCardType = null;
+            let currentEditId = null;
+
+            function openAddModal(userId, cardType, record = null, recordId = null) {
+                currentUserId = userId;
+                currentCardType = cardType;
+                currentEditId = recordId;
+
+                document.getElementById('edit_user_id').value = userId;
+                document.getElementById('edit_card_type').value = cardType;
+                document.getElementById('edit_record_id').value = recordId || '';
+
+                const fieldsHtml = getFormFields(cardType, record || {});
+                document.getElementById('modalDynamicFields').innerHTML = fieldsHtml;
+
+                if (cardType === 'education') {
+                    fillEducationTypeSelect(document.getElementById('education_type_id'), record?.education_type_id);
+                } else if (cardType === 'academic-degree') {
+                    fillAcademicTypeSelect(document.getElementById('academic_type_id'), record?.academic_type_id);
+                } else if (cardType === 'language') {
+                    fillLanguageLevelSelect(document.getElementById('language_level'), record?.level_id);
+                    if (typeof $ !== 'undefined') {
+                        $('#language_select').select2({
+                            dropdownParent: $('#eduModalEdit'),
+                            width: '100%'
+                        });
+                        if (record?.language_id) $('#language_select').val(record.language_id).trigger('change');
+                    }
+                } else if (cardType === 'computer-knowledge') {
+                    if (typeof $ !== 'undefined') {
+                        $('#computer_skills_select').select2({
+                            dropdownParent: $('#eduModalEdit'),
+                            width: '100%'
+                        });
+                        if (record?.skill_ids) $('#computer_skills_select').val(record.skill_ids).trigger('change');
+                    }
+                }
+
+                new bootstrap.Modal(document.getElementById('eduModalEdit')).show();
+            }
+
+            function fillEducationTypeSelect(select, selectedId) {
+                if (!select) return;
+                let html = '<option value="">Seçin</option>';
+                educationTypesCache.forEach(t => html += `<option value="${t.id}" ${selectedId == t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`);
+                select.innerHTML = html;
+            }
+
+            function fillAcademicTypeSelect(select, selectedId) {
+                if (!select) return;
+                let html = '<option value="">Seçin</option>';
+                academicTypesCache.forEach(t => html += `<option value="${t.id}" ${selectedId == t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`);
+                select.innerHTML = html;
+            }
+
+            function fillLanguageLevelSelect(select, selectedId) {
+                if (!select) return;
+                let html = '<option value="">Seçin</option>';
+                languageLevelsCache.forEach(l => html += `<option value="${l.id}" ${selectedId == l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`);
+                select.innerHTML = html;
+            }
+
+            function getFormFields(cardType, data) {
+                if (cardType === 'computer-knowledge') {
+                    let selectedSkills = data.skill_ids || [];
+                    let options = '';
+                    computerSkillsCache.forEach(skill => {
+                        options += `<option value="${skill.id}" ${selectedSkills.includes(skill.id) ? 'selected' : ''} data-name="${escapeHtml(skill.name)}" data-keywords="${escapeHtml(skill.key_words || '')}">${escapeHtml(skill.name)}</option>`;
+                    });
+                    return `<div class="mb-3"><label class="form-label">Kompüter bacarıqları</label><select name="skill_ids[]" id="computer_skills_select" class="form-control" multiple>${options}</select></div>`;
+                }
+                if (cardType === 'language') {
+                    let langOptions = '<option value="">Dil seçin</option>';
+                    languagesCache.forEach(l => langOptions += `<option value="${l.id}" ${data.language_id == l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`);
+                    let levelOptions = '<option value="">Səviyyə seçin</option>';
+                    languageLevelsCache.forEach(l => levelOptions += `<option value="${l.id}" ${data.level_id == l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`);
+                    return `<div class="row"><div class="col-md-6"><label>Dil</label><select name="language_id" id="language_select" class="form-control">${langOptions}</select></div><div class="col-md-6"><label>Səviyyə</label><select name="level_id" id="language_level" class="form-control">${levelOptions}</select></div></div>`;
+                }
+                if (cardType === 'education') {
+                    return `<div class="row"><div class="col-md-3"><label>Təhsil növü</label><select name="education_type_id" id="education_type_id" class="form-control" required></select></div><div class="col-md-9"><label>Müəssisə</label><input type="text" name="institution" class="form-control" value="${escapeHtml(data.institution || '')}"></div><div class="col-md-4"><label>Başlama tarixi</label><input type="date" name="start_date" class="form-control" value="${data.start_date || ''}"></div><div class="col-md-4"><label>Bitmə tarixi</label><input type="date" name="end_date" class="form-control" value="${data.end_date || ''}"></div><div class="col-md-4"><label>İxtisas</label><input type="text" name="specialty" class="form-control" value="${escapeHtml(data.specialty || '')}"></div><div class="col-md-12"><label>Sənəd məlumatı</label><input type="text" name="document_info" class="form-control" value="${escapeHtml(data.document_info || '')}"></div></div>`;
+                }
+                if (cardType === 'academic-degree') {
+                    return `<div class="mb-3"><label>Elmi dərəcə</label><select name="academic_type_id" id="academic_type_id" class="form-control" required></select></div><div class="mb-3"><label>Verilmə tarixi</label><input type="date" name="issue_date" class="form-control" value="${data.issue_date || ''}"></div><div class="mb-3"><label>Verən qurum</label><input type="text" name="issued_by" class="form-control" value="${escapeHtml(data.issued_by || '')}"></div><div class="mb-3"><label>Sənəd nömrəsi</label><input type="text" name="document_no" class="form-control" value="${escapeHtml(data.document_no || '')}"></div>`;
+                }
+                return '';
+            }
+
+            // === Form göndərmə ===
+            document.getElementById('kadrFormEdit')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const userId = document.getElementById('edit_user_id').value;
+                const cardType = document.getElementById('edit_card_type').value;
+                const recordId = document.getElementById('edit_record_id').value;
+                const formData = new FormData(this);
+
+                let url = `/tehsil-pesekar-inkisaf/user/${userId}/${cardType}`;
+                let method = 'POST';
+
+                if (recordId) formData.append('id', recordId);
+
+                try {
+                    const response = await fetch(url, {
+                        method,
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // User datalarını yenidən yüklə
+                        const dataResponse = await fetch(`/tehsil-pesekar-inkisaf/user/${userId}/data`);
+                        usersData[userId] = await dataResponse.json();
+
+                        // Container-ı yenilə
+                        const container = document.querySelector(`#employee-${userId}`);
+                        if (container) renderUserData(userId, container, usersData[userId]);
+
+                        bootstrap.Modal.getInstance(document.getElementById('eduModalEdit')).hide();
+                    }
+                } catch (error) {
+                    console.error('Xəta:', error);
+                }
+            });
+
+            // === Silmə ===
+            document.addEventListener('click', async function(e) {
+                const deleteBtn = e.target.closest('.delete-item');
+                if (!deleteBtn) return;
+
+                const row = deleteBtn.closest('tr');
+                const recordId = row.getAttribute('data-id');
+                const type = row.getAttribute('data-type');
+                const userId = row.closest('[id^="employee-"]')?.id.replace('employee-', '');
+
+                if (!confirm('Silmək istədiyinizdən əminsiniz?')) return;
+
+                try {
+                    const response = await fetch(`/tehsil-pesekar-inkisaf/user/${userId}/${type}/${recordId}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const dataResponse = await fetch(`/tehsil-pesekar-inkisaf/user/${userId}/data`);
+                        usersData[userId] = await dataResponse.json();
+                        const container = document.querySelector(`#employee-${userId}`);
+                        if (container) renderUserData(userId, container, usersData[userId]);
+                    }
+                } catch (error) {
+                    console.error('Xəta:', error);
+                }
+            });
+
+            // === Redaktə ===
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-item');
+                if (!editBtn) return;
+
+                const row = editBtn.closest('tr');
+                const recordId = row.getAttribute('data-id');
+                const type = row.getAttribute('data-type');
+                const userId = row.closest('[id^="employee-"]')?.id.replace('employee-', '');
+                const index = editBtn.getAttribute('data-index');
+
+                const record = usersData[userId]?.[type]?.[index];
+                if (record) openAddModal(userId, type, record, recordId);
+            });
+
+            // === Accordion açılma hadisəsi ===
+            document.querySelectorAll('.employee-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-bs-target');
+                    const container = document.querySelector(targetId);
+
+                    if (container && container.getAttribute('data-loaded') !== 'true') {
+                        const userId = targetId.replace('#employee-', '');
+                        loadUserData(userId, container);
+                    }
+                });
+            });
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
+            // Başlat
+            loadAllCaches();
+        });
+    </script>
+
+
+telimler ve kurslar tabina basanda cedvel cixmir
+submit edenden Xəta: SyntaxError: Failed to execute 'json' on 'Response': Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at HTMLFormElement.<anonymous> (tehsil-pesekar-inkisaf:877:51)
+yazir
+hamisi ucun
+
+json qaytarsin
+sweet alert ugurlu ugursuz mesaji cixsin
+
+deyisecek yerleri goster
+sehv kod
+duzgun kod deye

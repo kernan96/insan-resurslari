@@ -478,7 +478,7 @@
                                         <th scope="col">Doğum tarixi</th>
                                         <th scope="col">İşə başlama tarixi</th>
                                         <th scope="col">Bitmə tarixi</th>
-                                        
+
                                         <th scope="col">Əməliyyatlar</th>
                                     </tr>
                                 </thead>
@@ -515,8 +515,8 @@
                                         <td>{{ $emp->start_date?->format('Y-m-d') ?? '-' }}</td>
                                         {{-- İşdən çıxma --}}
                                         <td>{{ $emp->end_date?->format('Y-m-d') ?? '-' }}</td>
-                                      
-                                      
+
+
                                         <td>
                                             <div>
                                                 <a href="javascript:void(0)"
@@ -843,9 +843,14 @@
                             document.addEventListener('DOMContentLoaded', function() {
                                 const finInput = document.getElementById('finInput');
                                 const autofillBtn = document.getElementById('autofillFinBtn');
+
                                 autofillBtn.addEventListener('click', async function() {
                                     const fin = finInput.value.trim();
-                                    if (!fin) return;
+                                    if (!fin) {
+                                        Swal.fire('Xəbərdarlıq', 'Zəhmət olmasa FİN daxil edin', 'warning');
+                                        return;
+                                    }
+
                                     Swal.fire({
                                         title: 'Yüklənir...',
                                         text: 'Zəhmət olmasa gözləyin',
@@ -855,6 +860,7 @@
                                             Swal.showLoading();
                                         }
                                     });
+
                                     try {
                                         const res = await fetch("{{ route('employee.check-fin') }}", {
                                             method: "POST",
@@ -864,30 +870,71 @@
                                                 "Accept": "application/json"
                                             },
                                             body: JSON.stringify({
-                                                fin
+                                                fin: fin
                                             })
                                         });
+
                                         const data = await res.json();
+
                                         if (data.exists) {
-                                            autofillBtn.classList.remove('btn-warning');
+                                            autofillBtn.classList.remove('btn-warning', 'btn-secondary');
                                             autofillBtn.classList.add('btn-success');
-                                            // form inputlarını doldur
-                                            const fields = ['username', 'first_name', 'last_name', 'father_name', 'gender', 'birth_date', 'email', 'phone'];
-                                            fields.forEach(field => {
+
+                                            // Text inputları doldur
+                                            const textFields = [
+                                                'username', 'first_name', 'last_name', 'father_name',
+                                                'birth_date', 'email', 'phone', 'serial_no', 'citizen',
+                                                'birth_place', 'registered_address', 'residential_address', 'sin'
+                                            ];
+
+                                            textFields.forEach(field => {
                                                 const input = document.querySelector(`[name="${field}"]`);
-                                                if (input && data.data[field] !== undefined) {
+                                                if (input && data.data[field] !== undefined && data.data[field] !== null) {
                                                     input.value = data.data[field];
                                                 }
                                             });
+
+                                            // Gender select elementi doldur
+                                            if (data.data.gender !== undefined && data.data.gender !== null) {
+                                                const genderSelect = document.querySelector('[name="gender"]');
+                                                if (genderSelect) {
+                                                    genderSelect.value = data.data.gender.toString();
+                                                }
+                                            }
+
+                                            // Marital status select elementi doldur
+                                            if (data.data.marital_status !== undefined && data.data.marital_status !== null) {
+                                                const maritalSelect = document.querySelector('[name="marital_status"]');
+                                                if (maritalSelect) {
+                                                    maritalSelect.value = data.data.marital_status.toString();
+                                                }
+                                            }
+
+                                            Swal.fire('Uğurlu', 'Məlumatlar avtomatik dolduruldu', 'success');
                                         } else {
                                             autofillBtn.classList.remove('btn-success');
                                             autofillBtn.classList.add('btn-warning');
-                                            // forma boşalt
-                                            const fields = ['username', 'first_name', 'last_name', 'father_name', 'gender', 'birth_date', 'email', 'phone'];
-                                            fields.forEach(field => {
+
+                                            // Formu təmizlə
+                                            const textFields = [
+                                                'username', 'first_name', 'last_name', 'father_name',
+                                                'birth_date', 'email', 'phone', 'serial_no', 'citizen',
+                                                'birth_place', 'registered_address', 'residential_address', 'sin'
+                                            ];
+
+                                            textFields.forEach(field => {
                                                 const input = document.querySelector(`[name="${field}"]`);
                                                 if (input) input.value = '';
                                             });
+
+                                            // Selectləri təmizlə
+                                            const genderSelect = document.querySelector('[name="gender"]');
+                                            if (genderSelect) genderSelect.value = '';
+
+                                            const maritalSelect = document.querySelector('[name="marital_status"]');
+                                            if (maritalSelect) maritalSelect.value = '';
+
+                                            Swal.fire('Məlumat tapılmadı', 'Bu FİN-ə aid istifadəçi tapılmadı', 'info');
                                         }
                                     } catch (err) {
                                         console.error(err);
@@ -2101,100 +2148,98 @@
                         const newTr = document.createElement("tr");
                         newTr.classList.add("person");
                         newTr.innerHTML = `
-                    <td>${emp.first_name} ${emp.last_name}</td>
-                    <td>${emp.fin ?? '-'}</td>
-                    <td data-org-pos-id="${emp.org_position_id}">${emp.org_position_name ?? '-'}</td>
-                    <td>${emp.salary != null ? parseFloat(emp.salary).toString() + ' ₼' : '-'}</td>
-                    <td>${emp.birth_date ?? '-'}</td>
-                    <td>${emp.start_date ?? '-'}</td>
-                    <td>${emp.end_date ?? '-'}</td>
-                    <td>${emp.party_short_name ?? '-'}</td>
-                    <td>${emp.ordenbool ? '+' : '-'}</td>
-                    <td>
-                        <div>
-                            <a href="javascript:void(0)"
-                                class="btn btn-sm btn-primary person-edit-btn"
-                                data-user-id="${emp.id}"
-                                data-user-first_name="${emp.first_name}"
-                                data-user-last_name="${emp.last_name}"
-                                data-user-father_name="${emp.father_name ?? ''}"
-                                data-user-fin="${emp.fin ?? ''}"
-                                data-user-gender="${emp.gender ?? ''}"
-                                data-user-birth_date="${emp.birth_date ?? ''}"
-                                data-user-username="${emp.username ?? ''}"
-                                data-user-email="${emp.email ?? ''}"
-                                data-user-phone="${emp.phone ?? ''}"
-                                data-user-role-id="${emp.role_id ?? ''}"
-                                data-user-org-position-id="${emp.org_position_id ?? ''}"
-                                data-user-profile-photo-path="${emp.profile_photo_path ?? ''}"
-                                data-user-registered-address="${emp.registered_address ?? ''}"
-                                data-user-residential-address="${emp.residential_address ?? ''}"
-                                data-user-birth-place="${emp.birth_place ?? ''}"
-                                data-user-citizen="${emp.citizen ?? ''}"
-                                data-user-serial-no="${emp.serial_no ?? ''}"
-                                data-user-sin="${emp.sin ?? ''}"
-                                data-user-note="${emp.note ?? ''}"
-                                data-user-emp-id="${emp.emp_id ?? ''}"
-                                data-user-salary="${emp.salary ?? ''}"
-                                data-user-start-date="${emp.start_date ?? ''}"
-                                data-user-end-date="${emp.end_date ?? ''}"
-                                data-user-emp-type-id="${emp.emp_type_id ?? ''}"
-                                data-user-contract-no="${emp.contract_no ?? ''}"
-                                data-user-emp-note="${emp.note ?? ''}"
-                                data-user-marital-status="${emp.marital_status ?? ''}"
-                                data-bs-toggle="modal"
-                                data-bs-target="#updateContactModal">
-                                <i class="fas fa-edit" title="Redaktə et"></i>
-                            </a>
-                            <a href="javascript:void(0)"
-                               class="btn btn-sm btn-danger archive_person"
-                               data-user-emp-id="${emp.emp_id}"
-                               data-url="{{ route('structure.employment.archive') }}">
-                               <i class="bi bi-folder" title="Arxivlə"></i>
-                            </a>
-                            <a href="javascript:void(0)"
-                               class="btn btn-sm btn-primary employment-btn"
-                               data-user-id="${emp.id}"
-                               data-user-fin="${emp.fin ?? ''}"
-                               data-user-first-name="${emp.first_name}"
-                               data-user-last-name="${emp.last_name}"
-                               data-user-father-name="${emp.father_name ?? ''}"
-                               data-user-org-position-id="${emp.org_position_id ?? ''}"
-                               data-user-emp-type-id="${emp.emp_type_id ?? ''}"
-                               data-user-emp-id="${emp.emp_id}"
-                               data-user-salary="${emp.salary ?? ''}"
-                               data-user-start-date="${emp.start_date ?? ''}"
-                               data-user-end-date="${emp.end_date ?? ''}"
-                               data-user-contract-no="${emp.contract_no ?? ''}"
-                               data-user-note="${emp.note ?? ''}"
-                               data-bs-toggle="modal"
-                               data-bs-target="#addEmploymentModal">
-                               <i class="bi bi-file-earmark-text"></i>
-                            </a>
-                            <a href="javascript:void(0)"
-                               class="btn btn-sm btn-primary forma-btn"
-                               data-user-id="${emp.id}"
-                               data-user-first-name="${emp.first_name}"
-                               data-user-last-name="${emp.last_name}"
-                               data-user-father-name="${emp.father_name ?? ''}"
-                               data-bs-toggle="modal"
-                               data-bs-target="#addFormaInfoModal">
-                               <i class="bi bi-file-earmark"></i>
-                            </a>
-                            <a href="javascript:void(0)"
-                               class="btn btn-sm btn-primary role-btn"
-                               data-user-id="${emp.id}"
-                               data-user-role-id="${emp.role_id ?? ''}"
-                               data-user-first_name="${emp.first_name}"
-                               data-user-last_name="${emp.last_name}"
-                               data-user-father_name="${emp.father_name ?? ''}"
-                               data-bs-toggle="modal"
-                               data-bs-target="#roleModal">
-                               <i class="bi bi-shield-lock" title="Redaktə et"></i>
-                            </a>
-                        </div>
-                    </td>
-                `;
+                            <td>${emp.first_name} ${emp.last_name}</td>
+                            <td>${emp.fin ?? '-'}</td>
+                            <td data-org-pos-id="${emp.org_position_id}">${emp.org_position_name ?? '-'}</td>
+                            <td>${emp.salary != null ? parseFloat(emp.salary).toString() + ' ₼' : '-'}</td>
+                            <td>${emp.birth_date ?? '-'}</td>
+                            <td>${emp.start_date ?? '-'}</td>
+                            <td>${emp.end_date ?? '-'}</td>
+                            <td>
+                                <div>
+                                    <a href="javascript:void(0)"
+                                        class="btn btn-sm btn-primary person-edit-btn"
+                                        data-user-id="${emp.id}"
+                                        data-user-first_name="${emp.first_name}"
+                                        data-user-last_name="${emp.last_name}"
+                                        data-user-father_name="${emp.father_name ?? ''}"
+                                        data-user-fin="${emp.fin ?? ''}"
+                                        data-user-gender="${emp.gender ?? ''}"
+                                        data-user-birth_date="${emp.birth_date ?? ''}"
+                                        data-user-username="${emp.username ?? ''}"
+                                        data-user-email="${emp.email ?? ''}"
+                                        data-user-phone="${emp.phone ?? ''}"
+                                        data-user-role-id="${emp.role_id ?? ''}"
+                                        data-user-org-position-id="${emp.org_position_id ?? ''}"
+                                        data-user-profile-photo-path="${emp.profile_photo_path ?? ''}"
+                                        data-user-registered-address="${emp.registered_address ?? ''}"
+                                        data-user-residential-address="${emp.residential_address ?? ''}"
+                                        data-user-birth-place="${emp.birth_place ?? ''}"
+                                        data-user-citizen="${emp.citizen ?? ''}"
+                                        data-user-serial-no="${emp.serial_no ?? ''}"
+                                        data-user-sin="${emp.sin ?? ''}"
+                                        data-user-note="${emp.note ?? ''}"
+                                        data-user-emp-id="${emp.emp_id ?? ''}"
+                                        data-user-salary="${emp.salary ?? ''}"
+                                        data-user-start-date="${emp.start_date ?? ''}"
+                                        data-user-end-date="${emp.end_date ?? ''}"
+                                        data-user-emp-type-id="${emp.emp_type_id ?? ''}"
+                                        data-user-contract-no="${emp.contract_no ?? ''}"
+                                        data-user-emp-note="${emp.note ?? ''}"
+                                        data-user-marital-status="${emp.marital_status ?? ''}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#updateContactModal">
+                                        <i class="fas fa-edit" title="Redaktə et"></i>
+                                    </a>
+                                    <a href="javascript:void(0)"
+                                    class="btn btn-sm btn-danger archive_person"
+                                    data-user-emp-id="${emp.emp_id}"
+                                    data-url="{{ route('structure.employment.archive') }}">
+                                    <i class="bi bi-folder" title="Arxivlə"></i>
+                                    </a>
+                                    <a href="javascript:void(0)"
+                                    class="btn btn-sm btn-primary employment-btn"
+                                    data-user-id="${emp.id}"
+                                    data-user-fin="${emp.fin ?? ''}"
+                                    data-user-first-name="${emp.first_name}"
+                                    data-user-last-name="${emp.last_name}"
+                                    data-user-father-name="${emp.father_name ?? ''}"
+                                    data-user-org-position-id="${emp.org_position_id ?? ''}"
+                                    data-user-emp-type-id="${emp.emp_type_id ?? ''}"
+                                    data-user-emp-id="${emp.emp_id}"
+                                    data-user-salary="${emp.salary ?? ''}"
+                                    data-user-start-date="${emp.start_date ?? ''}"
+                                    data-user-end-date="${emp.end_date ?? ''}"
+                                    data-user-contract-no="${emp.contract_no ?? ''}"
+                                    data-user-note="${emp.note ?? ''}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addEmploymentModal">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    </a>
+                                    <a href="javascript:void(0)"
+                                    class="btn btn-sm btn-primary forma-btn"
+                                    data-user-id="${emp.id}"
+                                    data-user-first-name="${emp.first_name}"
+                                    data-user-last-name="${emp.last_name}"
+                                    data-user-father-name="${emp.father_name ?? ''}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addFormaInfoModal">
+                                    <i class="bi bi-file-earmark"></i>
+                                    </a>
+                                    <a href="javascript:void(0)"
+                                    class="btn btn-sm btn-primary role-btn"
+                                    data-user-id="${emp.id}"
+                                    data-user-role-id="${emp.role_id ?? ''}"
+                                    data-user-first_name="${emp.first_name}"
+                                    data-user-last_name="${emp.last_name}"
+                                    data-user-father_name="${emp.father_name ?? ''}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#roleModal">
+                                    <i class="bi bi-shield-lock" title="Redaktə et"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        `;
                         // Yeni sətiri tbody-yə əlavə et
                         tbody.prepend(newTr);
                     } else {

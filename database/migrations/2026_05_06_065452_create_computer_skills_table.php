@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('computer_skills', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->text('key_words');
             $table->timestamps();
         });
     }

@@ -1,279 +1,38 @@
-@extends('layouts.index')
-@section('css')
-<style>
-    .employee-item {
-        border: 2px solid #0d6efd;
-        border-radius: 12px;
+<?php
+
+namespace App\Models\Education;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Structure\User;
+
+class AcademicDegree extends Model
+{
+    use HasFactory;
+     protected $fillable = [
+        'given_date',
+        'given_org',
+        'doc_number',
+        'doc_date',
+        'doc_path',
+        'user_id',
+        'academic_type_id'
+    ];
+
+    // User əlaqəsi
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
-    .employee-header {
-        cursor: pointer;
+    // Academic Type əlaqəsi
+    public function academicType()
+    {
+        return $this->belongsTo(AcademicType::class);
     }
+}
 
-    .employee-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #0d6efd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        margin-right: 10px;
-        font-size: 18px;
-    }
-
-    .tab-pill .nav-link {
-        border-radius: 999px;
-    }
-</style>
-@endsection
-@section('content')
-<!-- Head hissəsində -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<main class="main blurred" id="main">
-
-    <div class="container py-4">
-        <div class="card shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Təhsil və peşəkar inkişaf</h5>
-                <button class="btn btn-success btn-sm d-flex align-items-center" data-bs-toggle="modal"
-                    data-bs-target="#tehsilModalAdd">
-                    <i class="bi bi-plus-circle me-1"></i> Əlavə et
-                </button>
-            </div>
-            <div class="card-body">
-                @foreach($users as $user)
-                <div class="employee-item mb-3">
-                    <div class="employee-header d-flex justify-content-between align-items-center p-3"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#employee-{{ $user->id }}"
-                        data-user-id="{{ $user->id }}"
-                        style="cursor: pointer;">
-                        <div class="d-flex align-items-center">
-                            <div class="employee-avatar me-3">
-                                @if($user->profile_photo_path)
-                                @php
-                                // Əgər yol /storage/ ilə başlayırsa, birbaşa istifadə et
-                                $photoPath = Str::startsWith($user->profile_photo_path, '/storage/')
-                                ? $user->profile_photo_path
-                                : '/storage/' . $user->profile_photo_path;
-                                @endphp
-                                <img src="{{ asset($photoPath) }}" width="40" height="40" class="rounded-circle">
-                                @else
-                                <i class="bi bi-person-fill"></i>
-                                @endif
-                            </div>
-                            <div>
-                                <div class="fw-semibold">
-                                    {{ $user->last_name }} {{ $user->first_name }} {{ $user->father_name }}
-                                    {{ $user->gender ? 'qızı' : 'oğlu' }}
-                                </div>
-                                <span class="badge bg-light text-secondary border">
-                                    {{ $user->orgPosition?->organizationDepartment?->name ?? '-' }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-chevron-down fs-5"></i>
-                        </div>
-                    </div>
-                    <div id="employee-{{ $user->id }}" class="collapse border-top" data-loaded="false">
-                        <div class="p-3">
-                            <div class="text-center p-4">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Yüklənir...</span>
-                                </div>
-                                <p class="mt-2">Məlumatlar yüklənir...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-
-            </div>
-        </div>
-    </div>
-    <!-- Modal -->
-    <div class="modal fade" id="tehsilModalAdd" tabindex="-1" aria-labelledby="kadrModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="kadrModalLabel">Yenisini yarat</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="user_id">
-                    <div class="card mb-4 mt-2" data-card-type="education">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Təhsil və ixtisas</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="education">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="education">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Təhsil müəssisəsinin adı, fakültə</th>
-                                            <th class="text-center align-middle" {{--style="width: 10%;"--}}>Daxil olduğu tarix</th>
-                                            <th class="text-center align-middle" {{--style="width: 10%;"--}}>Bitirdiyi tarix</th>
-                                            <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənəd üzrə ixtisasınız və peşəniz</th>
-                                            <th class="text-center align-middle" {{--style="width: 20%;"--}}>Təhsil haqqında sənədin nömrəsi, verildiyi tarix</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Sənəd</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-education"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4 mt-2" data-card-type="course">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Kurslar</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="course">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="course">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Kursun adı</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-course"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4 mt-2" data-card-type="training">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Təlimlər</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="training">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="training">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Təlimin adı</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Sertifikat</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-training"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4 mt-2" data-card-type="academic-degree">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Elmi dərəcə, elmi ad</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="academic-degree">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="academic-degree">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Elmi dərəcə, elmi ad</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Verildiyi tarix</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Hansı qurum tərəfindən verilmişdir</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Diplomun, attestatın nömrəsi, verildiyi tarix</th>
-                                            <th class="text-center align-middle" {{--style="width: 5%;"--}}>Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-academic-degree"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4 mt-2" data-card-type="computer-knowledge">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="computer-knowledge">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="computer-knowledge">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Kompüter texnikasından istifadə və digər peşə (ixtisas) bacarıqlarınız</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-computer-knowledge"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4 mt-2" data-card-type="language">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Dil bilikləri</span>
-                            <button type="button" class="btn btn-sm btn-primary form-add-btn" data-card="language">+ Əlavə
-                                et</button>
-                        </div>
-                        <div class="card-body" data-entries="language">
-                            <div class="table-responsive">
-                                <table class="data-table table table-bordered table-hover text-center" style="font-size:0.8rem;">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center align-middle">Dillər</th>
-                                            <th class="text-center align-middle">Bilmə dərəcəsi</th>
-                                            <th class="text-center align-middle" style="width: 5%;">Əməliyyatlar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbody-language"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
-                    <button type="submit" form="kadrForm" class="btn btn-primary">Yadda saxla</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- EDIT Modal -->
-    <div class="modal fade" id="eduModalEdit" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title">Redaktə et</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="kadrFormEdit">
-                        @csrf
-                        <input type="hidden" name="user_id" id="edit_user_id">
-                        <input type="hidden" name="edit_card_type" id="edit_card_type">
-                        <input type="hidden" name="edit_row_index" id="edit_row_index">
-                        <input type="hidden" name="edit_record_id" id="edit_record_id">
-                        <div id="modalDynamicFields"></div>
-                    </form>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Bağla</button>
-                    <button type="submit" form="kadrFormEdit" class="btn btn-primary">Dəyişiklikləri yadda saxla</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Body sonunda, script-dən əvvəl -->
-
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', function() {
             // Qlobal cache-lər
             let educationTypesCache = [];
@@ -746,8 +505,7 @@
                             <td>${escapeHtml(degree.issue_date || '')}</td>
                             <td>${escapeHtml(degree.issued_by || '')}</td>
                             <td>${escapeHtml(degree.document_no || '')}</td>
-                            <td class="text-center">${degree.document_link ? `<a href="${degree.document_link}" target="_blank"><i class="fas fa-file-pdf text-danger" style="font-size: 20px;"></i></a>` : '-'}</td>
-                            <td class="actions-cell text-center">
+                            <td class="actions-cell">
                                 <button class="btn btn-sm edit-item" data-id="${degree.id}" data-type="academic-degree" data-index="${index}"><i class="fas fa-edit"></i></button>
                                 <button class="btn btn-sm delete-item" data-id="${degree.id}" data-type="academic-degree"><i class="fas fa-trash"></i></button>
                             </td>
@@ -765,7 +523,7 @@
                             <div class="table-responsive">
                                 <table class="table table-bordered">
                                     <thead>
-                                        <tr><th>Dərəcə</th><th>Verilmə tarixi</th><th>Verən qurum</th><th>Sənəd</th><th>Fayl</th><th style="width:80px">Əməliyyat</th></tr>
+                                        <tr><th>Dərəcə</th><th>Verilmə tarixi</th><th>Verən qurum</th><th>Sənəd</th><th style="width:80px">Əməliyyat</th></tr>
                                     </thead>
                                     <tbody id="tbody-academic-degree-${userId}">${rows}</tbody>
                                 </table>
@@ -774,6 +532,7 @@
                     </div>
                 `;
             }
+
             // === Kompüter bilikləri tabının CONTENT hissəsi ===
             function renderComputerKnowledgeTabContent(userId, skills) {
                 let rows = '';
@@ -1022,18 +781,7 @@
                     </div>`;
                 }
                 if (cardType === 'academic-degree') {
-                    const documentLink = data.document_link || '';
-                    return `
-                        <div class="mb-3"><label>Elmi dərəcə</label><select name="academic_type_id" id="academic_type_id" class="form-control" required></select></div>
-                        <div class="mb-3"><label>Verilmə tarixi</label><input type="date" name="issue_date" class="form-control" value="${data.issue_date || ''}"></div>
-                        <div class="mb-3"><label>Verən qurum</label><input type="text" name="issued_by" class="form-control" value="${escapeHtml(data.issued_by || '')}"></div>
-                        <div class="mb-3"><label>Sənəd nömrəsi</label><input type="text" name="document_no" class="form-control" value="${escapeHtml(data.document_no || '')}"></div>
-                        <div class="mb-3">
-                            <label class="form-label">Sənəd faylı (PDF, max 400KB)</label>
-                            <input type="file" name="document_file" class="form-control" accept=".pdf">
-                            ${documentLink ? `<div class="mt-2"><small>Mövcud sənəd: <a href="${documentLink}" target="_blank"><i class="fas fa-file-pdf text-danger"></i> PDF</a></small></div><input type="hidden" name="existing_document" value="${documentLink}">` : ''}
-                        </div>
-                    `;
+                    return `<div class="mb-3"><label>Elmi dərəcə</label><select name="academic_type_id" id="academic_type_id" class="form-control" required></select></div><div class="mb-3"><label>Verilmə tarixi</label><input type="date" name="issue_date" class="form-control" value="${data.issue_date || ''}"></div><div class="mb-3"><label>Verən qurum</label><input type="text" name="issued_by" class="form-control" value="${escapeHtml(data.issued_by || '')}"></div><div class="mb-3"><label>Sənəd nömrəsi</label><input type="text" name="document_no" class="form-control" value="${escapeHtml(data.document_no || '')}"></div>`;
                 }
                 if (cardType === 'course') {
                     const courseName = data.course_name || data.major || '';
@@ -1255,100 +1003,120 @@
             loadAllCaches();
         });
     </script>
-</main>
-<a class="back-to-top d-flex align-items-center justify-content-center" href="#"><i
-        class="bi bi-arrow-up-short"></i></a>
-@endsection
-@section('js')
-<!-- <script>
-    document.querySelectorAll('.btnDelete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            Swal.fire({
-                title: "Silmək istəyirsiniz?",
-                text: "Bu əməliyyat geri qaytarıla bilməz!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#6c757d",
-                confirmButtonText: "Bəli, sil!",
-                cancelButtonText: "Xeyr"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Silindi!',
-                        text: 'Məlumat uğurla silindi.',
-                        confirmButtonColor: '#0d6efd'
-                    });
-                }
-            });
-        });
-    });
-</script> -->
-<script>
-    function addRow(buttonId, wrapId, inputName) {
-        const btn = document.getElementById(buttonId);
-        const wrap = document.getElementById(wrapId);
-        if (!btn || !wrap) return;
-        btn.addEventListener("click", () => {
-            const row = document.createElement("div");
-            row.className = "d-flex align-items-center gap-2 assignee-row";
-            row.innerHTML = `
-        <input type="file" name="${inputName}[]" class="form-control form-control-sm">
-                                                    <input type="text" name="educationname[]" class="form-control form-control-sm" placeholder="Fayl adı...">
-        <button type="button" class="btn btn-sm btn-outline-danger btnRemove">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      `;
-            wrap.appendChild(row);
-            const removeBtn = row.querySelector(".btnRemove");
-            removeBtn.addEventListener("click", () => {
-                row.remove();
-            });
-        });
-    }
-    addRow("btnAddEducation", "educationWrap", "education");
-    addRow("btnAddCourse", "coursesWrap", "courses");
-    addRow("btnAddTraining", "trainingsWrap", "trainings");
-    addRow("btnAddCertificate", "certificatesWrap", "certificates");
-</script>
-<script>
-    function addRow(buttonId, wrapId, inputName) {
-        const btn = document.getElementById(buttonId);
-        const wrap = document.getElementById(wrapId);
-        if (!btn || !wrap) return;
-        btn.addEventListener("click", () => {
-            const row = document.createElement("div");
-            row.className = "d-flex align-items-center gap-2 assignee-row";
-            row.innerHTML = `
-        <input type="file" name="${inputName}[]" class="form-control form-control-sm">
-                                                    <input type="text" name="educationname[]" class="form-control form-control-sm" placeholder="Fayl adı...">
-        <button type="button" class="btn btn-sm btn-outline-danger btnRemove">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      `;
-            wrap.appendChild(row);
-            row.querySelector(".btnRemove").addEventListener("click", () => {
-                row.remove();
-            });
-        });
+
+    public function getUserData($userId)
+    {
+        $user = User::with([
+            'educations.educationType',
+            'academicDegrees.academicType',
+            'userLanguages.language',
+            'userLanguages.languageLevel',
+            'computerKnowledges.skill'
+        ])->findOrFail($userId);
+
+        return response()->json([
+            'education' => $user->educations->filter(function ($e) {
+                return $e->education_type_id < 6;
+            })->map(function ($e) {
+                return [
+                    'id' => $e->id,
+                    'education_type_id' => $e->education_type_id,
+                    'education_type_name' => $e->educationType?->name,
+                    'institution' => $e->org_name,
+                    'start_date' => $e->start_date,
+                    'end_date' => $e->end_date,
+                    'specialty' => $e->major,
+                    'document_info' => $e->doc_number . ' ' . $e->doc_date,
+                    'document_link' => $e->doc_path
+                ];
+            })->values(),
+            'academic-degree' => $user->academicDegrees->map(function ($a) {
+                return [
+                    'id' => $a->id,
+                    'academic_type_id' => $a->academic_type_id,
+                    'academic_type_name' => $a->academicType?->name,
+                    'issue_date' => $a->given_date,
+                    'issued_by' => $a->given_org,
+                    'document_no' => $a->doc_number . ' ' . $a->doc_date
+                ];
+            }),
+            'language' => $user->userLanguages->map(function ($l) {
+                return [
+                    'id' => $l->id,
+                    'language_id' => $l->language_id,
+                    'language_name' => $l->language?->name,
+                    'level_id' => $l->language_level_id,
+                    'level_name' => $l->languageLevel?->name
+                ];
+            }),
+            'computer-knowledge' => $user->computerKnowledges->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'skill_id' => $c->skill_id,
+                    'skill_name' => $c->skill?->name
+                ];
+            }),
+            'course' => $user->educations->where('education_type_id', 6)->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'course_name' => $c->org_name,
+                    'certificate' => $c->doc_path
+                ];
+            })->values(),
+            'training' => $user->educations->where('education_type_id', 7)->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'training_name' => $t->org_name,
+                    'certificate' => $t->doc_path
+                ];
+            })->values()
+        ]);
     }
 
-    function initExistingRemove() {
-        document.querySelectorAll(".btnExistingRemove").forEach(btn => {
-            btn.addEventListener("click", function() {
-                this.closest(".existing-file").remove();
-            });
-        });
+    public function saveAcademicDegree(Request $request, $userId)
+    {
+        try {
+            $data = $request->validate([
+                'id' => 'nullable|exists:academic_degrees,id',
+                'academic_type_id' => 'required|exists:academic_types,id',
+                'issue_date' => 'nullable|date',
+                'issued_by' => 'nullable|string',
+                'document_no' => 'nullable|string'
+            ]);
+
+            $degree = AcademicDegree::updateOrCreate(
+                ['id' => $data['id'] ?? null, 'user_id' => $userId],
+                [
+                    'user_id' => $userId,
+                    'academic_type_id' => $data['academic_type_id'],
+                    'given_date' => $data['issue_date'],
+                    'given_org' => $data['issued_by'],
+                    'doc_number' => $data['document_no'],
+                    'doc_date' => null
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'id' => $degree->id,
+                'message' => 'Elmi dərəcə uğurla yadda saxlanıldı'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation xətası: ' . implode(', ', $e->errors()['academic_type_id'] ?? ['Məlumatları düzgün daxil edin'])
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Xəta: ' . $e->getMessage()
+            ], 500);
+        }
     }
-    document.addEventListener("DOMContentLoaded", () => {
-        addRow("btnAddEducationEdit", "educationWrapEdit", "education");
-        addRow("btnAddCourseEdit", "coursesWrapEdit", "courses");
-        addRow("btnAddTrainingEdit", "trainingsWrapEdit", "trainings");
-        addRow("btnAddCertificateEdit", "certificatesWrapEdit", "certificates");
-        initExistingRemove();
-    });
-</script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-@endsection
+
+    AcademicDegree-doc_path
+    pdf 400kb
+    elave et/edit form html elave et
+    html table fayl columnu elave et
+
+    controllerleri ve qalan script deyisecek hisseleri goster

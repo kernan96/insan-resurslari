@@ -698,7 +698,6 @@ class OrgDepartmentController extends Controller
         }
         $user = User::where('fin', $fin)->first();
         if ($user) {
-            // tapıldı → forma məlumat doldur
             return response()->json([
                 'exists' => true,
                 'data' => [
@@ -706,10 +705,17 @@ class OrgDepartmentController extends Controller
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'father_name' => $user->father_name,
-                    'gender' => $user->gender,
+                    'gender' => $user->gender, // string '0' və ya '1' olmalıdır
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'marital_status' => $user->marital_status, // əlavə edildi
+                    'serial_no' => $user->serial_no, // əlavə edildi
+                    'citizen' => $user->citizen, // əlavə edildi
+                    'birth_place' => $user->birth_place, // əlavə edildi
+                    'registered_address' => $user->registered_address, // əlavə edildi
+                    'residential_address' => $user->residential_address, // əlavə edildi
+                    'sin' => $user->sin, // əlavə edildi
                 ]
             ]);
         } else {
