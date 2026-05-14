@@ -5,8 +5,10 @@ use App\Http\Controllers\Structure\OrgDepartmentController;
 use App\Http\Controllers\Structure\FormInfo;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Education\EducationController;
+use App\Http\Controllers\Home\HomeController;
 use App\Http\Requests\StoreDocumentRequest;
 use Illuminate\Http\Request;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -18,9 +20,7 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('/', function () {
-    return view('pages.home');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kadr-ucotu', function () {
     return view('pages.staff.personnel-accounting');
 })->name('pages.staff.personnel-accounting');

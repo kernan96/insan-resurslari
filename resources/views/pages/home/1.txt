@@ -1,0 +1,70 @@
+public function index()
+    {
+        // organization_type_id 1 və ya 2 olan bütün qurumları seç
+        $parentOrgs = OrganizationDepartment::whereIn('organization_type_id', [1, 2])->get();
+
+        $Organizations = [];
+
+        foreach ($parentOrgs as $parentOrg) {
+            // Alt qurumları recursive şəkildə yığ (organization_type_id 1,2 olmayanlar)
+            $childrenToInclude = $this->getChildrenExcludingTypes($parentOrg, [1, 2]);
+
+            // User sayını hesabla: öz orgPositions -> users -> activeEmployment
+            $userCount = $this->countActiveUsers($parentOrg);
+
+            foreach ($childrenToInclude as $child) {
+                $userCount += $this->countActiveUsers($child);
+            }
+
+            $Organizations[] = (object) [
+                'name' => $parentOrg->name,
+                'user_count' => $userCount,
+            ];
+        }
+
+        // Ümumi aktiv işçi sayı
+        $allUsersCount = User::whereHas('activeEmployment')->count();
+
+        return view('pages.home.home', compact('Organizations', 'allUsersCount'));
+    }
+
+    /**
+     * Recursive olaraq organization_type_id qadağan olunanları keçərək alt qurumları yığ
+     */
+    private function getChildrenExcludingTypes($org, array $excludeTypes, &$result = [])
+    {
+        foreach ($org->children as $child) {
+            if (!in_array($child->organization_type_id, $excludeTypes)) {
+                $result[] = $child;
+            }
+            // Altındakıları da yoxla (iç-içə)
+            $this->getChildrenExcludingTypes($child, $excludeTypes, $result);
+        }
+        return $result;
+    }
+
+    /**
+     * Verilən qurumun öz orgPositions-larından aktiv işçi sayını hesabla
+     */
+    private function countActiveUsers($org)
+    {
+        $count = 0;
+        foreach ($org->orgPositions as $orgPosition) {
+            foreach ($orgPosition->users as $user) {
+                if ($user->activeEmployment) {
+                    $count++;
+                }
+            }
+        }
+        return $count;
+    }
+
+    burada kicik deyisiklik et
+
+butun org ve children'lar ucun OrganizationDepartment->is_active==false olsa onun userleri sayma ama altindaki organizationDepartmentleri buraxma her biri ucun yoxla 
+OrganizationDepartment->is_active==true olsa userleri ona bagli userleri say else userler sayma
+
+
+sadece deyisecek hisseleri goster
+kohne kod 
+yeni kod seklinde
